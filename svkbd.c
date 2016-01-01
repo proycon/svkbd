@@ -584,7 +584,7 @@ main(int argc, char *argv[]) {
 
 	for (i = 1; argv[i]; i++) {
 		if(!strcmp(argv[i], "-v")) {
-			die("svkbd-"VERSION", © 2006-2010 svkbd engineers,"
+			die("svkbd-"VERSION", © 2006-2016 svkbd engineers,"
 				       " see LICENSE for details\n");
 		} else if(!strcmp(argv[i], "-d")) {
 			isdock = True;
