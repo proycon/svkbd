@@ -65,4 +65,4 @@ uninstall:
 	rm -f ${DESTDIR}${PREFIX}/bin/${NAME}-??
 	rm -f ${DESTDIR}${MANPREFIX}/man1/${MAN1}
 
-.PHONY: all clean dist install uninstall
+.PHONY: all clean dist options install uninstall
