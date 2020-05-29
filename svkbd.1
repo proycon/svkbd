@@ -1,0 +1,36 @@
+.Dd May 29, 2020
+.Dt SVKBD 1
+.Os
+.Sh NAME
+.Nm svkbd
+.Nd simple virtual keyboard
+.Sh SYNOPSIS
+.Nm
+.Op Fl d
+.Op Fl g Ar geometry
+.Op Fl h
+.Op Fl v
+.Sh DESCRIPTION
+.Nm
+is a simple virtual keyboard, intended to be used in environments, where no
+keyboard is available.
+.Pp
+The options are as follows:
+.Bl -tag -width Ds
+.It Fl d
+Set the _NET_WM_WINDOW_TYPE_DOCK property to hint windowmanagers it is
+dockable, by default off.
+.It Fl g Ar geometry
+Adjust the initial window position or size as specified by the standard X11
+geometry format.
+.It Fl h
+Show the usage information.
+.It Fl v
+Show the version information.
+.El
+.Sh SEE ALSO
+.Xr XParseGeometry 3
+.Sh AUTHORS
+.An Christoph Lohmann Aq Mt 20h@r-36.net
+and
+.An Enno Boland Aq Mt gottox@s01.de

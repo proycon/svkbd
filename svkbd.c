@@ -101,7 +101,10 @@ Bool ispressing = False;
 
 /* configuration, allows nested code to access above variables */
 #include "config.h"
-#include "layout.h"
+#ifndef LAYOUT
+#error "make sure to define LAYOUT"
+#endif
+#include LAYOUT
 
 void
 motionnotify(XEvent *e)

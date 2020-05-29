@@ -1,73 +1,68 @@
 # svkbd - simple virtual keyboard
 # See LICENSE file for copyright and license details.
+.POSIX:
+
+NAME = svkbd
+VERSION = 0.1
 
 include config.mk
 
-SRC = svkbd.c
+BIN = ${NAME}-${LAYOUT}
+SRC = ${NAME}.c
+OBJ = ${NAME}-${LAYOUT}.o
+MAN1 = ${NAME}.1
 
-all: options svkbd-${LAYOUT}
+all: ${BIN}
 
 options:
 	@echo svkbd build options:
-	@echo "CFLAGS   = ${CFLAGS}"
-	@echo "LDFLAGS  = ${LDFLAGS}"
+	@echo "CFLAGS   = ${SVKBD_CFLAGS}"
+	@echo "CPPLAGS  = ${SVKBD_CPPFLAGS}"
+	@echo "LDFLAGS  = ${SVKBD_LDFLAGS}"
 	@echo "CC       = ${CC}"
 
-config.h: config.mk
-	@echo creating $@ from config.def.h
-	@cp config.def.h $@
+config.h:
+	cp config.def.h $@
 
-svkbd-%: layout.%.h config.h ${SRC}
-	@echo creating layout.h from $<
-	@cp $< layout.h
-	@echo CC -o $@
-	@${CC} -o $@ ${SRC} ${LDFLAGS} ${CFLAGS}
+${BIN}: config.h ${OBJ}
+
+${OBJ}: config.h
+
+${OBJ}:
+	${CC} -o $@ -c ${SRC} ${SVKBD_CFLAGS} ${SVKBD_CPPFLAGS}
+
+${BIN}:
+	${CC} -o ${BIN} ${OBJ} ${SVKBD_LDFLAGS}
 
 clean:
-	@echo cleaning
-	@for i in svkbd-*; \
-	do \
-		if [ -x $$i ]; \
-		then \
-			rm -f $$i 2> /dev/null; \
-		fi \
-	done; true
-	@rm -f ${OBJ} svkbd-${VERSION}.tar.gz 2> /dev/null; true
+	rm -f ${NAME}-?? ${NAME}-??.o ${OBJ}
 
-dist: clean
-	@echo creating dist tarball
-	@mkdir -p svkbd-${VERSION}
-	@cp LICENSE Makefile README config.def.h config.mk \
-		${SRC} svkbd-${VERSION}
-	@for i in layout.*.h; \
+dist:
+	rm -rf "${NAME}-${VERSION}"
+	mkdir -p "${NAME}-${VERSION}"
+	cp LICENSE Makefile README config.def.h config.mk ${MAN1} \
+		${SRC} ${NAME}-${VERSION}
+	for i in layout.*.h; \
 	do \
-		cp $$i svkbd-${VERSION}; \
+		cp $$i ${NAME}-${VERSION}; \
 	done
-	@tar -cf svkbd-${VERSION}.tar svkbd-${VERSION}
-	@gzip svkbd-${VERSION}.tar
-	@rm -rf svkbd-${VERSION}
+	tar -cf - "${NAME}-${VERSION}" | \
+		gzip -c > "${NAME}-${VERSION}.tar.gz"
+	rm -rf "${NAME}-${VERSION}"
 
 install: all
-	@echo installing executable files to ${DESTDIR}${PREFIX}/bin
-	@mkdir -p ${DESTDIR}${PREFIX}/bin
-	@for i in svkbd-*; \
+	mkdir -p ${DESTDIR}${PREFIX}/bin
+	for i in ${NAME}-??; \
 	do \
-		if [ -x $$i ]; \
-		then \
-			echo CP $$i; \
-			cp $$i ${DESTDIR}${PREFIX}/bin; \
-			chmod 755 ${DESTDIR}${PREFIX}/bin/$$i; \
-		fi \
+		cp $$i ${DESTDIR}${PREFIX}/bin; \
+		chmod 755 ${DESTDIR}${PREFIX}/bin/$$i; \
 	done
-#	@echo installing manual page to ${DESTDIR}${MANPREFIX}/man1
-#	@mkdir -p ${DESTDIR}${MANPREFIX}/man1
-#	@sed "s/VERSION/${VERSION}/g" < svkbd.1 > ${DESTDIR}${MANPREFIX}/man1/svkbd.1
-#	@chmod 644 ${DESTDIR}${MANPREFIX}/man1/svkbd.1
+	mkdir -p "${DESTDIR}${MANPREFIX}/man1"
+	sed "s/VERSION/${VERSION}/g" < ${MAN1} > ${DESTDIR}${MANPREFIX}/man1/${MAN1}
+	chmod 644 ${DESTDIR}${MANPREFIX}/man1/${MAN1}
 
 uninstall:
-	@echo removing executable files from ${DESTDIR}${PREFIX}/bin
-	@rm -f ${DESTDIR}${PREFIX}/bin/svkbd-*
-#	@echo removing manual page from ${DESTDIR}${MANPREFIX}/man1
-#	@rm -f ${DESTDIR}${MANPREFIX}/man1/svkbd.1
+	rm -f ${DESTDIR}${PREFIX}/bin/${NAME}-??
+	rm -f ${DESTDIR}${MANPREFIX}/man1/${MAN1}
 
-.PHONY: all options clean dist install uninstall
+.PHONY: all clean dist install uninstall
