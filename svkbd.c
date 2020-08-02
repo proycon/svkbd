@@ -258,7 +258,6 @@ drawkeyboard(void) {
 		if(keys[i].keysym != 0)
 			drawkey(&keys[i]);
 	}
-	XSync(dpy, False);
 }
 
 void
@@ -459,16 +458,24 @@ run(void) {
 	fd_set fds;
 	struct timeval tv;
 
+
 	xfd = ConnectionNumber(dpy);
-	FD_ZERO(&fds);
-	FD_SET(xfd, &fds);
 	tv.tv_usec = 0;
-	tv.tv_sec = 1;
+	tv.tv_sec = 2;
+
+	//XSync(dpy, False);
+	XFlush(dpy);
+
 	while (running) {
-		select(xfd + 1, &fds, NULL, NULL, &tv);
-		XNextEvent(dpy, &ev);
-		if(handler[ev.type]) {
-			(handler[ev.type])(&ev); /* call handler */
+		FD_ZERO(&fds);
+		FD_SET(xfd, &fds);
+		if (select(xfd + 1, &fds, NULL, NULL, &tv)) {
+			while (XPending(dpy)) {
+				XNextEvent(dpy, &ev);
+				if(handler[ev.type]) {
+					(handler[ev.type])(&ev); /* call handler */
+				}
+			}
 		}
 	}
 }
@@ -631,8 +638,8 @@ main(int argc, char *argv[]) {
 	int i, xr, yr, bitm;
 	unsigned int wr, hr;
 
-	signal(SIGTERM, sigterm);
 	memcpy(&keys, &keys_en, sizeof(keys_en));
+	signal(SIGTERM, sigterm);
 	for (i = 1; argv[i]; i++) {
 		if(!strcmp(argv[i], "-v")) {
 			die("svkbd-"VERSION", © 2006-2016 svkbd engineers,"
