@@ -886,6 +886,7 @@ main(int argc, char *argv[]) {
 	const char* layers_env = getenv("SVKBD_LAYERS");
 	if (layers_env != NULL) {
 		layer_names_list = malloc(128);
+		if (!layer_names_list) die("memory allocation error\n");
 		strcpy(layer_names_list, layers_env);
 	}
 	const char* heightfactor_s = getenv("SVKBD_HEIGHTFACTOR");
@@ -929,7 +930,10 @@ main(int argc, char *argv[]) {
 		} else if(!strcmp(argv[i], "-l")) {
 			if(i >= argc - 1)
 				continue;
-			if (layer_names_list == NULL) layer_names_list = malloc(128);
+			if (layer_names_list == NULL) {
+				layer_names_list = malloc(128);
+				if (!layer_names_list) die("memory allocation error\n");
+			}
 			strcpy(layer_names_list, argv[++i]);
 		} else if(!strcmp(argv[i], "-s")) {
 			if(i >= argc - 1)
@@ -945,6 +949,8 @@ main(int argc, char *argv[]) {
 		}
 	}
 
+	if (heightfactor <= 0) die("height factor must be a positive integer\n");
+
 	init_layers(layer_names_list, initial_layer_name);
 
 	if(!setlocale(LC_CTYPE, "") || !XSupportsLocale())
@@ -955,6 +961,6 @@ main(int argc, char *argv[]) {
 	run();
 	cleanup();
 	XCloseDisplay(dpy);
-	if (layer_names_list != NULL) free(layer_names_list);
+	free(layer_names_list);
 	return 0;
 }
