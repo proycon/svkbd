@@ -208,27 +208,6 @@ void
 cleanup(void) {
 	int i;
 
-	// E.g. Generally in scripts we call SIGTERM on svkbd in which case
-	//      if the user is holding for example the enter key (to execute
-	//      the kill or script that does the kill), that causes an issue
-	//      since then X doesn't know the keyup is never coming.. (since
-	//      process will be dead before finger lifts - in that case we
-	//      just trigger out fake up presses for all keys
-	if (sigtermd) {
-		//handle last pending events
-		XEvent ev;
-		while (XPending(dpy)) {
-			XNextEvent(dpy, &ev);
-			if(handler[ev.type]) {
-				(handler[ev.type])(&ev); /* call handler */
-			}
-		}
-		if (debug) { printf("Cleanup: simulating key release\n"); fflush(stdout); }
-		for (i = 0; i < numkeys; i++) {
-			XTestFakeKeyEvent(dpy, XKeysymToKeycode(dpy, keys[i].keysym), False, 0);
-		}
-	}
-
 	for (i = 0; i < SchemeLast; i++)
 		free(scheme[i]);
 	drw_sync(drw);
@@ -542,6 +521,7 @@ run(void) {
 	fd_set fds;
 	struct timeval tv;
 	double duration = 0.0;
+	int i, r;
 
 
 	xfd = ConnectionNumber(dpy);
@@ -556,7 +536,8 @@ run(void) {
 		usleep(100000L);
 		FD_ZERO(&fds);
 		FD_SET(xfd, &fds);
-		if (select(xfd + 1, &fds, NULL, NULL, &tv)) {
+		r = select(xfd + 1, &fds, NULL, NULL, &tv);
+		if (r) {
 			while (XPending(dpy)) {
 				XNextEvent(dpy, &ev);
 				if(handler[ev.type]) {
@@ -564,6 +545,7 @@ run(void) {
 				}
 			}
 		} else {
+			//time-out expired without anything interesting happening, check for long-presses
 			if (ispressing && ispressingkeysym) {
 				duration = get_press_duration();
 				if (debug == 2) { printf("%f\n", duration); fflush(stdout); }
@@ -576,6 +558,20 @@ run(void) {
 				}
 			}
 		}
+        if (r == -1 || sigtermd) {
+            // an error occurred  or we received a signal
+            // E.g. Generally in scripts we want to call SIGTERM on svkbd in which case
+            //      if the user is holding for example the enter key (to execute
+            //      the kill or script that does the kill), that causes an issue
+            //      since then X doesn't know the keyup is never coming.. (since
+            //      process will be dead before finger lifts - in that case we
+            //      just trigger out fake up presses for all keys
+            if (debug) { printf("signal received, releasing all keys"); fflush(stdout); }
+            for (i = 0; i < numkeys; i++) {
+                XTestFakeKeyEvent(dpy, XKeysymToKeycode(dpy, keys[i].keysym), False, 0);
+            }
+            running = False;
+        }
 	}
 }
 
