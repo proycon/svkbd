@@ -37,20 +37,20 @@ static Key keys_en[40] = {
         { 0, XK_m, 1 },
         /*{ "/?", XK_slash, 1 },*/
         { "Tab", XK_Tab, 1 },
-        { "<-", XK_BackSpace, 2 },
+        { "⇍ Bksp", XK_BackSpace, 2 },
 
         { 0 }, /* New row */
-        { "Layer 2", XK_Cancel, 1},
-        { "Shift", XK_Shift_L, 1 },
+        { "↺", XK_Cancel, 1},
+        { "Shft", XK_Shift_L, 1 },
         /*{ "L", XK_Left, 1 },*/
-        { "D", XK_Down, 1 },
-        { "U", XK_Up, 1 },
+        { "↓", XK_Down, 1 },
+        { "↑", XK_Up, 1 },
         /*{ "R", XK_Right, 1 },*/
         { "", XK_space, 2 },
         { "Esc", XK_Escape, 1 },
         { "Ctrl", XK_Control_L, 1 },
         /*{ "Alt", XK_Alt_L, 1 },*/
-        { "Enter", XK_Return, 2 },
+        { "↲ Enter", XK_Return, 2 },
 };
 
 static Key keys_symbols[40] = {
@@ -80,28 +80,28 @@ static Key keys_symbols[40] = {
 
   { 0 }, /* New row */
 
-  { " ", XK_Shift_L|XK_bar, 1 },
-  { " ", XK_Shift_L|XK_bar, 1 },
-  { "L", XK_Left, 1 },
-  { "R", XK_Right, 1 },
-  { " ", XK_Shift_L|XK_bar, 1 },
-  { " ", XK_Shift_L|XK_bar, 1 },
-  { " ", XK_Shift_L|XK_bar, 1 },
+  { "", XK_Shift_L|XK_bar, 1 },
+  { "⇤", XK_Home, 1 },
+  { "←", XK_Left, 1 },
+  { "→", XK_Right, 1 },
+  { "⇥", XK_End, 1 },
+  { "⇊", XK_Next, 1 },
+  { "⇈", XK_Prior, 1 },
   { "Tab", XK_Tab, 1 },
-  { "<-", XK_BackSpace, 2 },
+  { "⇍ Bksp", XK_BackSpace, 2 },
 
   { 0 }, /* New row */
-  { "Layer 1", XK_Cancel, 1},
-  { "Shift", XK_Shift_L, 1 },
+  { "↺", XK_Cancel, 1},
+  { "Shft", XK_Shift_L, 1 },
   /*{ "L", XK_Left, 1 },*/
-  { "D", XK_Down, 1 },
-  { "U", XK_Up, 1 },
+  { "↓", XK_Down, 1 },
+  { "↑", XK_Up, 1 },
   /*{ "R", XK_Right, 1 },*/
   { "", XK_space, 2 },
   { "Esc", XK_Escape, 1 },
   { "Ctrl", XK_Control_L, 1 },
   /*{ "Alt", XK_Alt_L, 1 },*/
-  { "Enter", XK_Return, 2 },
+  { "↲ Enter", XK_Return, 2 },
 };
 
 Buttonmod buttonmods[] = {

@@ -13,37 +13,29 @@
 #include <X11/Xutil.h>
 #include <X11/Xproto.h>
 #include <X11/extensions/XTest.h>
+#include <X11/Xft/Xft.h>
+#ifdef XINERAMA
+#include <X11/extensions/Xinerama.h>
+#endif
 #include <signal.h>
 #include <sys/select.h>
 
+#include "drw.h"
+#include "util.h"
+
+
 
 /* macros */
-#define MAX(a, b)       ((a) > (b) ? (a) : (b))
 #define LENGTH(x)       (sizeof x / sizeof x[0])
+#define TEXTW(X)        (drw_fontset_getwidth(drw, (X)))
 
 /* enums */
-enum { ColFG, ColBG, ColLast };
+enum { SchemeNorm, SchemePress, SchemeHighlight, SchemeLast };
 enum { NetWMWindowType, NetLast };
 
 /* typedefs */
 typedef unsigned int uint;
 typedef unsigned long ulong;
-
-typedef struct {
-	ulong norm[ColLast];
-	ulong press[ColLast];
-	ulong high[ColLast];
-
-	Drawable drawable;
-	GC gc;
-	struct {
-		int ascent;
-		int descent;
-		int height;
-		XFontSet set;
-		XFontStruct *xfont;
-	} font;
-} DC; /* draw context */
 
 typedef struct {
 	char *label;
@@ -66,18 +58,15 @@ static void buttonrelease(XEvent *e);
 static void cleanup(void);
 static void configurenotify(XEvent *e);
 static void countrows();
-static void die(const char *errstr, ...);
 static void drawkeyboard(void);
 static void drawkey(Key *k);
 static void expose(XEvent *e);
 static Key *findkey(int x, int y);
-static ulong getcolor(const char *colstr);
-static void initfont(const char *fontstr);
 static void leavenotify(XEvent *e);
 static void press(Key *k, KeySym mod);
 static void run(void);
 static void setup(void);
-static int textnw(const char *text, uint len);
+static void togglelayer();
 static void unpress(Key *k, KeySym mod);
 static void updatekeys();
 
@@ -93,8 +82,9 @@ static void (*handler[LASTEvent]) (XEvent *) = {
 };
 static Atom netatom[NetLast];
 static Display *dpy;
-static DC dc;
+static Drw *drw;
 static Window root, win;
+static Clr* scheme[SchemeLast];
 static Bool running = True, isdock = False;
 static KeySym pressedmod = 0;
 static int rows = 0, ww = 0, wh = 0, wx = 0, wy = 0;
@@ -203,14 +193,12 @@ cleanup(void) {
 			XTestFakeKeyEvent(dpy, XKeysymToKeycode(dpy, keys[i].keysym), False, 0);
 		}
 	}
-	XSync(dpy, False);
 
-	if(dc.font.set)
-		XFreeFontSet(dpy, dc.font.set);
-	else
-		XFreeFont(dpy, dc.font.xfont);
-	XFreePixmap(dpy, dc.drawable);
-	XFreeGC(dpy, dc.gc);
+	for (i = 0; i < SchemeLast; i++)
+		free(scheme[i]);
+	drw_free(drw);
+	drw_sync(drw);
+	XSync(dpy, False);
 	XDestroyWindow(dpy, win);
 	XSync(dpy, False);
 	XSetInputFocus(dpy, PointerRoot, RevertToPointerRoot, CurrentTime);
@@ -223,9 +211,7 @@ configurenotify(XEvent *e) {
 	if(ev->window == win && (ev->width != ww || ev->height != wh)) {
 		ww = ev->width;
 		wh = ev->height;
-		XFreePixmap(dpy, dc.drawable);
-		dc.drawable = XCreatePixmap(dpy, root, ww, wh,
-				DefaultDepth(dpy, screen));
+		drw_resize(drw, ww, wh);
 		updatekeys();
 	}
 }
@@ -240,15 +226,6 @@ countrows() {
 	}
 }
 
-void
-die(const char *errstr, ...) {
-	va_list ap;
-
-	va_start(ap, errstr);
-	vfprintf(stderr, errstr, ap);
-	va_end(ap);
-	exit(EXIT_FAILURE);
-}
 
 void
 drawkeyboard(void) {
@@ -262,42 +239,29 @@ drawkeyboard(void) {
 
 void
 drawkey(Key *k) {
-	int x, y, h, len;
-	XRectangle r = { k->x, k->y, k->w, k->h};
+	int x, y, w, h;
 	const char *l;
-	ulong *col;
 
 	if(k->pressed)
-		col = dc.press;
+		drw_setscheme(drw, scheme[SchemePress]);
 	else if(k->highlighted)
-		col = dc.high;
+		drw_setscheme(drw, scheme[SchemeHighlight]);
 	else
-		col = dc.norm;
+		drw_setscheme(drw, scheme[SchemeNorm]);
+	drw_rect(drw, k->x, k->y, k->w, k->h, 1, 1);
+	drw_rect(drw, k->x, k->y, k->w, k->h, 0, 0);
 
-	XSetForeground(dpy, dc.gc, col[ColBG]);
-	XFillRectangles(dpy, dc.drawable, dc.gc, &r, 1);
-	XSetForeground(dpy, dc.gc, dc.norm[ColFG]);
-	r.height -= 1;
-	r.width -= 1;
-	XDrawRectangles(dpy, dc.drawable, dc.gc, &r, 1);
-	XSetForeground(dpy, dc.gc, col[ColFG]);
 	if(k->label) {
 		l = k->label;
 	} else {
 		l = XKeysymToString(k->keysym);
 	}
-	len = strlen(l);
-	h = dc.font.ascent + dc.font.descent;
-	y = k->y + (k->h / 2) - (h / 2) + dc.font.ascent;
-	x = k->x + (k->w / 2) - (textnw(l, len) / 2);
-	if(dc.font.set) {
-		XmbDrawString(dpy, dc.drawable, dc.font.set, dc.gc, x, y, l,
-				len);
-	} else {
-		XDrawString(dpy, dc.drawable, dc.gc, x, y, l, len);
-	}
-	XCopyArea(dpy, dc.drawable, win, dc.gc, k->x, k->y, k->w, k->h,
-			k->x, k->y);
+	h = fontsize * 2;
+	y = k->y + (k->h / 2) - (h / 2);
+	w = TEXTW(l);
+	x = k->x + (k->w / 2) - (w / 2);
+	drw_text(drw, x, y, w, h, 0, l, 0);
+	drw_map(drw, win, k->x, k->y, k->w, k->h);
 }
 
 void
@@ -322,52 +286,7 @@ findkey(int x, int y) {
 	return NULL;
 }
 
-ulong
-getcolor(const char *colstr) {
-	Colormap cmap = DefaultColormap(dpy, screen);
-	XColor color;
 
-	if(!XAllocNamedColor(dpy, cmap, colstr, &color, &color))
-		die("error, cannot allocate color '%s'\n", colstr);
-	return color.pixel;
-}
-
-void
-initfont(const char *fontstr) {
-	char *def, **missing;
-	int i, n;
-
-	missing = NULL;
-	if(dc.font.set)
-		XFreeFontSet(dpy, dc.font.set);
-	dc.font.set = XCreateFontSet(dpy, fontstr, &missing, &n, &def);
-	if(missing) {
-		while(n--)
-			fprintf(stderr, "svkbd: missing fontset: %s\n", missing[n]);
-		XFreeStringList(missing);
-	}
-	if(dc.font.set) {
-		XFontStruct **xfonts;
-		char **font_names;
-		dc.font.ascent = dc.font.descent = 0;
-		n = XFontsOfFontSet(dc.font.set, &xfonts, &font_names);
-		for(i = 0, dc.font.ascent = 0, dc.font.descent = 0; i < n; i++) {
-			dc.font.ascent = MAX(dc.font.ascent, (*xfonts)->ascent);
-			dc.font.descent = MAX(dc.font.descent,(*xfonts)->descent);
-			xfonts++;
-		}
-	} else {
-		if(dc.font.xfont)
-			XFreeFont(dpy, dc.font.xfont);
-		dc.font.xfont = NULL;
-		if(!(dc.font.xfont = XLoadQueryFont(dpy, fontstr))
-		&& !(dc.font.xfont = XLoadQueryFont(dpy, "fixed")))
-			die("error, cannot load font: '%s'\n", fontstr);
-		dc.font.ascent = dc.font.xfont->ascent;
-		dc.font.descent = dc.font.xfont->descent;
-	}
-	dc.font.height = dc.font.ascent + dc.font.descent;
-}
 
 void
 leavenotify(XEvent *e) {
@@ -487,15 +406,36 @@ setup(void) {
 	XSizeHints *sizeh = NULL;
 	XClassHint *ch;
 	Atom atype = -1;
-	int i, sh, sw;
+	int i, j, sh, sw;
 	XWMHints *wmh;
+
+	#if XINERAMA
+	XineramaScreenInfo *info = NULL;
+	#endif
 
 	/* init screen */
 	screen = DefaultScreen(dpy);
 	root = RootWindow(dpy, screen);
-	sw = DisplayWidth(dpy, screen);
-	sh = DisplayHeight(dpy, screen);
-	initfont(font);
+	#if XINERAMA
+	if(XineramaIsActive(dpy)) {
+		info = XineramaQueryScreens(dpy, &i);
+		sw = info[0].width;
+		sh = info[0].height;
+		XFree(info);
+	} else
+	#endif
+	{
+		sw = DisplayWidth(dpy, screen);
+		sh = DisplayHeight(dpy, screen);
+	}
+    drw = drw_create(dpy, screen, root, sw, sh);
+	if (!drw_fontset_create(drw, fonts, LENGTH(fonts)))
+		die("no fonts could be loaded.");
+    drw_setscheme(drw, scheme[SchemeNorm]);
+
+	/* init appearance */
+	for (j = 0; j < SchemeLast; j++)
+		scheme[j] = drw_scm_create(drw, colors[j], 2);
 
 	/* init atoms */
 	if(isdock) {
@@ -520,23 +460,12 @@ setup(void) {
 	if(wy < 0)
 		wy = sh + wy - wh;
 
-	dc.norm[ColBG] = getcolor(normbgcolor);
-	dc.norm[ColFG] = getcolor(normfgcolor);
-	dc.press[ColBG] = getcolor(pressbgcolor);
-	dc.press[ColFG] = getcolor(pressfgcolor);
-	dc.high[ColBG] = getcolor(highlightbgcolor);
-	dc.high[ColFG] = getcolor(highlightfgcolor);
-	dc.drawable = XCreatePixmap(dpy, root, ww, wh,
-			DefaultDepth(dpy, screen));
-	dc.gc = XCreateGC(dpy, root, 0, 0);
-	if(!dc.font.set)
-		XSetFont(dpy, dc.gc, dc.font.xfont->fid);
 	for(i = 0; i < LENGTH(keys); i++)
 		keys[i].pressed = 0;
 
 	wa.override_redirect = !wmborder;
-	wa.border_pixel = dc.norm[ColFG];
-	wa.background_pixel = dc.norm[ColBG];
+	wa.border_pixel = scheme[SchemeNorm][ColFg].pixel;
+	wa.background_pixel = scheme[SchemeNorm][ColBg].pixel;
 	win = XCreateWindow(dpy, root, wx, wy, ww, wh, 0,
 			    CopyFromParent, CopyFromParent, CopyFromParent,
 			    CWOverrideRedirect | CWBorderPixel |
@@ -575,20 +504,11 @@ setup(void) {
 	}
 
 	XMapRaised(dpy, win);
+	drw_resize(drw, ww, wh);
 	updatekeys();
 	drawkeyboard();
 }
 
-int
-textnw(const char *text, uint len) {
-	XRectangle r;
-
-	if(dc.font.set) {
-		XmbTextExtents(dc.font.set, text, len, NULL, &r);
-		return r.width;
-	}
-	return XTextWidth(dc.font.xfont, text, len);
-}
 
 void
 updatekeys() {
@@ -642,7 +562,7 @@ main(int argc, char *argv[]) {
 	signal(SIGTERM, sigterm);
 	for (i = 1; argv[i]; i++) {
 		if(!strcmp(argv[i], "-v")) {
-			die("svkbd-"VERSION", © 2006-2016 svkbd engineers,"
+			die("svkbd-"VERSION", © 2006-2020 svkbd engineers,"
 				       " see LICENSE for details\n");
 		} else if(!strcmp(argv[i], "-d")) {
 			isdock = True;
