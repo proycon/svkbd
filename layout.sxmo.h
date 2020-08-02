@@ -80,14 +80,14 @@ static Key keys_symbols[40] = {
 
   { 0 }, /* New row */
 
-  { "|", XK_Shift_L|XK_bar, 1 },
+  { " ", XK_Shift_L|XK_bar, 1 },
+  { " ", XK_Shift_L|XK_bar, 1 },
   { "L", XK_Left, 1 },
   { "R", XK_Right, 1 },
-  { "Ctrl-C", XK_Shift_L|XK_bar, 1 },
-  { "Ctrl-L", XK_Shift_L|XK_bar, 1 },
-  { "Ctrl-V", XK_Shift_L|XK_bar, 1 },
-  { "Ctrl-D", XK_Shift_L|XK_bar, 1 },
-  { "TAB", XK_Tab, 1 },
+  { " ", XK_Shift_L|XK_bar, 1 },
+  { " ", XK_Shift_L|XK_bar, 1 },
+  { " ", XK_Shift_L|XK_bar, 1 },
+  { "Tab", XK_Tab, 1 },
   { "<-", XK_BackSpace, 2 },
 
   { 0 }, /* New row */
