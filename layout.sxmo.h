@@ -76,7 +76,7 @@ static Key keys_symbols[40] = {
   { ",<", XK_comma, 1 },
   { ".>", XK_period, 1 },
   { "/?", XK_slash, 1 },
-  { "\\", XK_backslash, 1 },
+  { "\\|", XK_backslash, 1 },
 
   { 0 }, /* New row */
 
