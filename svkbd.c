@@ -57,6 +57,7 @@ typedef struct {
 } Buttonmod;
 
 /* function declarations */
+static void printdbg(const char * fmt, ...);
 static void motionnotify(XEvent *e);
 static void buttonpress(XEvent *e);
 static void buttonrelease(XEvent *e);
@@ -103,9 +104,9 @@ static KeySym pressedmod = 0;
 static struct timeval pressbegin;
 static int currentlayer = 0;
 static int enableoverlays = 1;
-static int currentoverlay = -1; // -1 = no overlay
-static KeySym overlaykeysym = 0; //keysym for which the overlay is presented
-static int releaseprotect = 0; //set to 1 after overlay is shown, protecting against immediate release
+static int currentoverlay = -1; /* -1 = no overlay */
+static KeySym overlaykeysym = 0; /* keysym for which the overlay is presented */
+static int releaseprotect = 0; /* set to 1 after overlay is shown, protecting against immediate release */
 static int tmp_keycode = 1;
 static int rows = 0, ww = 0, wh = 0, wx = 0, wy = 0;
 static char *name = "svkbd";
@@ -348,7 +349,7 @@ leavenotify(XEvent *e) {
 }
 
 void record_press_begin(KeySym ks) {
-	//record the begin of the press, don't simulate the actual keypress yet
+	/* record the begin of the press, don't simulate the actual keypress yet */
 	gettimeofday(&pressbegin, NULL);
 	ispressingkeysym = ks;
 }
@@ -359,7 +360,7 @@ press(Key *k, KeySym mod) {
 	int overlayidx = -1;
 	k->pressed = !k->pressed;
 
-	if (debug) { printf("Begin press: %ld\n", k->keysym); fflush(stdout); }
+	if (debug) printdbg("Begin press: %ld\n", k->keysym);
 	pressbegin.tv_sec = 0;
 	pressbegin.tv_usec = 0;
 	ispressingkeysym = 0;
@@ -369,11 +370,11 @@ press(Key *k, KeySym mod) {
 			overlayidx = hasoverlay(k->keysym);
 		if (enableoverlays && overlayidx != -1) {
 			if (!pressbegin.tv_sec && !pressbegin.tv_usec) {
-				//record the begin of the press, don't simulate the actual keypress yet
+				/*record the begin of the press, don't simulate the actual keypress yet */
 				record_press_begin(k->keysym);
 			}
 		} else {
-			if (debug) { printf("Simulating press: %ld\n", k->keysym); fflush(stdout); }
+			if (debug) printdbg("Simulating press: %ld\n", k->keysym);
 			for(i = 0; i < numkeys; i++) {
 				if(keys[i].pressed && IsModifierKey(keys[i].keysym)) {
 					simulate_keypress(keys[i].keysym);
@@ -454,8 +455,8 @@ unpress(Key *k, KeySym mod) {
 	if ((pressbegin.tv_sec || pressbegin.tv_usec) && enableoverlays && k && k->keysym == ispressingkeysym) {
 		if (currentoverlay == -1) {
 			if (get_press_duration() < overlay_delay) {
-				if (debug) { printf("Delayed simulation of press after release: %ld\n", k->keysym); fflush(stdout); }
-				//simulate the press event, as we postponed it earlier in press()
+				if (debug) printdbg("Delayed simulation of press after release: %ld\n", k->keysym);
+				/* simulate the press event, as we postponed it earlier in press() */
 				for(i = 0; i < numkeys; i++) {
 					if(keys[i].pressed && IsModifierKey(keys[i].keysym)) {
 						simulate_keypress(keys[i].keysym);
@@ -476,9 +477,9 @@ unpress(Key *k, KeySym mod) {
 
 	if (debug) {
 		if (k) {
-			printf("Simulation of release: %ld\n", k->keysym); fflush(stdout);
+			printdbg("Simulation of release: %ld\n", k->keysym);
 		} else {
-			printf("Simulation of release (all keys)\n"); fflush(stdout);
+			printdbg("Simulation of release (all keys)\n");
 		}
 	}
 
@@ -530,7 +531,6 @@ run(void) {
 	tv.tv_sec = 1;
 
 
-	//XSync(dpy, False);
 	XFlush(dpy);
 
 	while (running) {
@@ -546,12 +546,12 @@ run(void) {
 				}
 			}
 		} else {
-			//time-out expired without anything interesting happening, check for long-presses
+			/* time-out expired without anything interesting happening, check for long-presses */
 			if (ispressing && ispressingkeysym) {
 				duration = get_press_duration();
-				if (debug == 2) { printf("%f\n", duration); fflush(stdout); }
+				if (debug == 2) printdbg("%f\n", duration);
 				if (get_press_duration() >= overlay_delay) {
-					if (debug) { printf("press duration %f\n", duration); fflush(stdout); }
+					if (debug) printdbg("press duration %f\n", duration);
 					showoverlay(hasoverlay(ispressingkeysym));
 					pressbegin.tv_sec = 0;
 					pressbegin.tv_usec = 0;
@@ -559,20 +559,20 @@ run(void) {
 				}
 			}
 		}
-        if (r == -1 || sigtermd) {
-            // an error occurred  or we received a signal
-            // E.g. Generally in scripts we want to call SIGTERM on svkbd in which case
-            //      if the user is holding for example the enter key (to execute
-            //      the kill or script that does the kill), that causes an issue
-            //      since then X doesn't know the keyup is never coming.. (since
-            //      process will be dead before finger lifts - in that case we
-            //      just trigger out fake up presses for all keys
-            if (debug) { printf("signal received, releasing all keys"); fflush(stdout); }
-            for (i = 0; i < numkeys; i++) {
-                XTestFakeKeyEvent(dpy, XKeysymToKeycode(dpy, keys[i].keysym), False, 0);
-            }
-            running = False;
-        }
+		if (r == -1 || sigtermd) {
+			/* an error occurred or we received a signal */
+			/* E.g. Generally in scripts we want to call SIGTERM on svkbd in which case
+			        if the user is holding for example the enter key (to execute
+			        the kill or script that does the kill), that causes an issue
+			        since then X doesn't know the keyup is never coming.. (since
+			        process will be dead before finger lifts - in that case we
+			        just trigger out fake up presses for all keys */
+			if (debug) printdbg("signal received, releasing all keys");
+			for (i = 0; i < numkeys; i++) {
+				XTestFakeKeyEvent(dpy, XKeysymToKeycode(dpy, keys[i].keysym), False, 0);
+			}
+			running = False;
+		}
 	}
 }
 
@@ -610,7 +610,7 @@ setup(void) {
 		die("no fonts could be loaded.");
 	drw_setscheme(drw, scheme[SchemeNorm]);
 
-	//find an unused keycode to use as a temporary keycode (derived from source: https://stackoverflow.com/questions/44313966/c-xtest-emitting-key-presses-for-every-unicode-character)
+	/* find an unused keycode to use as a temporary keycode (derived from source: https://stackoverflow.com/questions/44313966/c-xtest-emitting-key-presses-for-every-unicode-character) */
 	KeySym *keysyms = NULL;
 	int keysyms_per_keycode = 0;
 	int keycode_low, keycode_high;
@@ -743,7 +743,7 @@ usage(char *argv0) {
 	fprintf(stderr, "  -O         - Disable overlays\n");
 	fprintf(stderr, "  -l         - Comma separated list of layers to enable\n");
 	fprintf(stderr, "  -s         - Layer to select on program start\n");
-	fprintf(stderr, "  -H [int]	 - Height fraction, one key row takes 1/x of the screen height");
+	fprintf(stderr, "  -H [int]   - Height fraction, one key row takes 1/x of the screen height");
 	fprintf(stderr, "  -fn [font] - Set font (Xft, e.g: DejaVu Sans:bold:size=20)\n");
 	exit(1);
 }
@@ -758,7 +758,7 @@ cyclelayer() {
 	currentlayer++;
 	if (currentlayer >= numlayers)
 		currentlayer = 0;
-	if (debug) { printf("Cycling to layer %d\n", currentlayer); fflush(stdout); }
+	if (debug) printdbg("Cycling to layer %d\n", currentlayer);
 	setlayer();
 	updatekeys();
 	drawkeyboard();
@@ -771,7 +771,7 @@ togglelayer() {
 	} else if (numlayers > 1) {
 		currentlayer = 1;
 	}
-	if (debug) { printf("Toggling layer %d\n", currentlayer); fflush(stdout); }
+	if (debug) printdbg("Toggling layer %d\n", currentlayer);
 	setlayer();
 	updatekeys();
 	drawkeyboard();
@@ -780,9 +780,9 @@ togglelayer() {
 
 void
 showoverlay(int idx) {
-	if (debug) { printf("Showing overlay %d\n", idx); fflush(stdout); }
+	if (debug) printdbg("Showing overlay %d\n", idx);
 	int i,j;
-	//unpress existing key (visually only)
+	/* unpress existing key (visually only) */
 	for(i = 0; i < numkeys; i++) {
 		if(keys[i].pressed && !IsModifierKey(keys[i].keysym)) {
 			keys[i].pressed = 0;
@@ -809,7 +809,7 @@ showoverlay(int idx) {
 
 void
 hideoverlay() {
-	if (debug) { printf("Hiding overlay %d\n", currentoverlay); fflush(stdout); }
+	if (debug) printdbg("Hiding overlay %d\n", currentoverlay);
 	currentoverlay = -1;
 	overlaykeysym = 0;
 	currentlayer = -1;
@@ -822,7 +822,7 @@ sigterm(int sig)
 {
 	running = False;
 	sigtermd = True;
-	if (debug) { printf("Sigterm received\n"); fflush(stdout); }
+	if (debug) printdbg("Sigterm received\n");
 }
 
 
@@ -868,6 +868,15 @@ init_layers(char * layer_names_list, const char * initial_layer_name) {
 	setlayer();
 }
 
+void
+printdbg(const char * fmt, ...) {
+	va_list args;
+	va_start(args, fmt);
+	vfprintf(stderr, fmt, args);
+	va_end(args);
+	fflush(stderr);
+}
+
 int
 main(int argc, char *argv[]) {
 	int i, xr, yr, bitm;
@@ -878,24 +887,24 @@ main(int argc, char *argv[]) {
 	signal(SIGTERM, sigterm);
 
 
-	//parse environment variables
+	/* parse environment variables */
 	if (OVERLAYS <= 1) {
 		enableoverlays = 0;
-    } else {
+	} else {
 		const char* enableoverlays_env = getenv("SVKBD_ENABLEOVERLAYS");
 		if (enableoverlays_env != NULL) enableoverlays = atoi(enableoverlays_env);
 	}
 	const char* layers_env = getenv("SVKBD_LAYERS");
 	if (layers_env != NULL) {
-		layer_names_list = malloc(128);
-		if (!layer_names_list) die("memory allocation error\n");
-		strcpy(layer_names_list, layers_env);
+		if (!strdup(layer_names_list, layers_env)) {
+			die("memory allocation error\n");
+		}
 	}
 	const char* heightfactor_s = getenv("SVKBD_HEIGHTFACTOR");
 	if (heightfactor_s != NULL)
 		heightfactor = atoi(heightfactor_s);
 
-	//parse command line arguments
+	/* parse command line arguments */
 	for (i = 1; argv[i]; i++) {
 		if(!strcmp(argv[i], "-v")) {
 			die("svkbd-"VERSION", © 2006-2020 svkbd engineers,"
@@ -932,11 +941,10 @@ main(int argc, char *argv[]) {
 		} else if(!strcmp(argv[i], "-l")) {
 			if(i >= argc - 1)
 				continue;
-			if (layer_names_list == NULL) {
-				layer_names_list = malloc(128);
-				if (!layer_names_list) die("memory allocation error\n");
+			free(layer_names_list);
+			if (!strdup(layer_names_list, argv[++i])) {
+				die("memory allocation error\n");
 			}
-			strcpy(layer_names_list, argv[++i]);
 		} else if(!strcmp(argv[i], "-s")) {
 			if(i >= argc - 1)
 				continue;
