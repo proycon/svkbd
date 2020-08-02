@@ -1,5 +1,4 @@
 #define KEYS 43
-static Key keys[KEYS] = { NULL };
 
 static Key keys_en[KEYS] = {
         { "Esc", XK_Escape, 1 },

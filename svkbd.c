@@ -125,6 +125,7 @@ Bool sigtermd = False;
 #endif
 #include LAYOUT
 
+static Key keys[KEYS] = { NULL };
 static Key* layers[LAYERS];
 
 void
@@ -876,9 +877,14 @@ main(int argc, char *argv[]) {
 
 	signal(SIGTERM, sigterm);
 
+
 	//parse environment variables
-	const char* enableoverlays_env = getenv("SVKBD_ENABLEOVERLAYS");
-	if (enableoverlays_env != NULL) enableoverlays = atoi(enableoverlays_env);
+	if (OVERLAYS <= 1) {
+		enableoverlays = 0;
+    } else {
+		const char* enableoverlays_env = getenv("SVKBD_ENABLEOVERLAYS");
+		if (enableoverlays_env != NULL) enableoverlays = atoi(enableoverlays_env);
+	}
 	const char* layers_env = getenv("SVKBD_LAYERS");
 	if (layers_env != NULL) {
 		layer_names_list = malloc(128);

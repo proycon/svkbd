@@ -1,4 +1,5 @@
-static Key keys[] = {
+#define KEYS 66
+static Key keys_sh[] = {
 	{ "`~", XK_quoteleft, 1},
 	{ "1!~", XK_1, 1 },
 	{ "2\"ˇ", XK_2, 1 },
@@ -65,7 +66,6 @@ static Key keys[] = {
 	{ "Alt Gr", XK_ISO_Level3_Shift, 2 },
 	{ "Menu", XK_Menu, 2 },
 	{ "Ctrl", XK_Control_R, 2 },
-	{ "[X]", XK_Cancel, 1},
 };
 
 Buttonmod buttonmods[] = {
@@ -73,3 +73,16 @@ Buttonmod buttonmods[] = {
 	{ XK_Alt_L, Button3 },
 };
 
+#define OVERLAYS 1
+static Key overlay[OVERLAYS] = {
+	{ 0, XK_Cancel },
+};
+
+#define LAYERS 1
+static char* layer_names[LAYERS] = {
+	"sh",
+};
+
+static Key* available_layers[LAYERS] = {
+	keys_sh,
+};

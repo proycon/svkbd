@@ -1,4 +1,4 @@
-LAYOUT = sxmo
+LAYOUT = mobile-intl
 
 # paths
 PREFIX = /usr/local
