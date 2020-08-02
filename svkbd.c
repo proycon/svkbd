@@ -196,9 +196,9 @@ cleanup(void) {
 
 	for (i = 0; i < SchemeLast; i++)
 		free(scheme[i]);
-	drw_free(drw);
 	drw_sync(drw);
 	XSync(dpy, False);
+	drw_free(drw);
 	XDestroyWindow(dpy, win);
 	XSync(dpy, False);
 	XSetInputFocus(dpy, PointerRoot, RevertToPointerRoot, CurrentTime);
