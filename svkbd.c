@@ -67,7 +67,6 @@ static void drawkeyboard(void);
 static void drawkey(Key *k);
 static void expose(XEvent *e);
 static Key *findkey(int x, int y);
-static int iscyclemod(KeySym keysym);
 static void leavenotify(XEvent *e);
 static void press(Key *k, KeySym mod);
 static double get_press_duration();
@@ -76,9 +75,9 @@ static void setup(void);
 static void simulate_keypress(KeySym keysym);
 static void simulate_keyrelease(KeySym keysym);
 static void showoverlay(int idx);
-static void cyclemod();
 static void hideoverlay();
 static void cyclelayer();
+static void togglelayer();
 static void unpress(Key *k, KeySym mod);
 static void updatekeys();
 
@@ -101,14 +100,15 @@ static Bool running = True, isdock = False;
 static KeySym pressedmod = 0;
 static struct timeval pressbegin;
 static int currentlayer = 0;
+static int enableoverlays = 1;
 static int currentoverlay = -1; // -1 = no overlay
-static int currentcyclemod = 0;
 static KeySym overlaykeysym = 0; //keysym for which the overlay is presented
 static int releaseprotect = 0; //set to 1 after overlay is shown, protecting against immediate release
 static int tmp_keycode = 1;
 static int rows = 0, ww = 0, wh = 0, wx = 0, wy = 0;
 static char *name = "svkbd";
 static int debug = 0;
+static int numlayers = 0;
 
 static KeySym ispressingkeysym;
 
@@ -121,6 +121,8 @@ Bool sigtermd = False;
 #error "make sure to define LAYOUT"
 #endif
 #include LAYOUT
+
+static Key* layers[LAYERS];
 
 void
 motionnotify(XEvent *e)
@@ -210,6 +212,15 @@ cleanup(void) {
 	//      process will be dead before finger lifts - in that case we
 	//      just trigger out fake up presses for all keys
 	if (sigtermd) {
+		//handle last pending events
+		XEvent ev;
+		while (XPending(dpy)) {
+			XNextEvent(dpy, &ev);
+			if(handler[ev.type]) {
+				(handler[ev.type])(&ev); /* call handler */
+			}
+		}
+		if (debug) { printf("Cleanup: simulating key release\n"); fflush(stdout); }
 		for (i = 0; i < LENGTH(keys); i++) {
 			XTestFakeKeyEvent(dpy, XKeysymToKeycode(dpy, keys[i].keysym), False, 0);
 		}
@@ -218,6 +229,7 @@ cleanup(void) {
 	for (i = 0; i < SchemeLast; i++)
 		free(scheme[i]);
 	drw_sync(drw);
+	drw_free(drw);
 	XSync(dpy, False);
 	drw_free(drw);
 	XDestroyWindow(dpy, win);
@@ -272,7 +284,13 @@ drawkey(Key *k) {
 	drw_rect(drw, k->x, k->y, k->w, k->h, 1, 1);
 	drw_rect(drw, k->x, k->y, k->w, k->h, 0, 0);
 
-	if(k->label) {
+	if (k->keysym == XK_KP_Insert) {
+		if (enableoverlays) {
+			l = "≅";
+		} else {
+			l = "≇";
+		}
+	} else if(k->label) {
 		l = k->label;
 	} else {
 		l = XKeysymToString(k->keysym);
@@ -322,17 +340,6 @@ hasoverlay(KeySym keysym) {
 	return -1;
 }
 
-int
-iscyclemod(KeySym keysym) {
-	int i;
-	for(i = 0; i < CYCLEMODS; i++) {
-		if(cyclemods[i].keysym == keysym) {
-			return i;
-		}
-	}
-	return -1;
-}
-
 void
 leavenotify(XEvent *e) {
 	if (currentoverlay != -1) {
@@ -358,16 +365,10 @@ press(Key *k, KeySym mod) {
 	pressbegin.tv_usec = 0;
 	ispressingkeysym = 0;
 
-	int cm = iscyclemod(k->keysym);
-	if (cm != -1) {
-		if (!pressbegin.tv_sec && !pressbegin.tv_usec) {
-			//record the begin of the press, don't simulate the actual keypress yet
-			record_press_begin(k->keysym);
-		}
-	} else if(!IsModifierKey(k->keysym)) {
-		if (currentoverlay == -1)
+	if(!IsModifierKey(k->keysym)) {
+		if (enableoverlays && currentoverlay == -1)
 			overlayidx = hasoverlay(k->keysym);
-		if (overlayidx != -1) {
+		if (enableoverlays && overlayidx != -1) {
 			if (!pressbegin.tv_sec && !pressbegin.tv_usec) {
 				//record the begin of the press, don't simulate the actual keypress yet
 				record_press_begin(k->keysym);
@@ -437,6 +438,12 @@ unpress(Key *k, KeySym mod) {
 		case XK_Cancel:
 			cyclelayer();
 			break;
+		case XK_script_switch:
+			togglelayer();
+			break;
+		case XK_KP_Insert:
+			enableoverlays = !enableoverlays;
+			break;
 		case XK_Break:
 		  running = False;
 		default:
@@ -445,7 +452,7 @@ unpress(Key *k, KeySym mod) {
 	}
 
 
-	if ((pressbegin.tv_sec || pressbegin.tv_usec) && k && k->keysym == ispressingkeysym) {
+	if ((pressbegin.tv_sec || pressbegin.tv_usec) && enableoverlays && k && k->keysym == ispressingkeysym) {
 		if (currentoverlay == -1) {
 			if (get_press_duration() < overlay_delay) {
 				if (debug) { printf("Delayed simulation of press after release: %ld\n", k->keysym); fflush(stdout); }
@@ -472,7 +479,7 @@ unpress(Key *k, KeySym mod) {
 		if (k) {
 			printf("Simulation of release: %ld\n", k->keysym); fflush(stdout);
 		} else {
-			printf("Simulation of release (all keys)"); fflush(stdout);
+			printf("Simulation of release (all keys)\n"); fflush(stdout);
 		}
 	}
 
@@ -500,7 +507,7 @@ unpress(Key *k, KeySym mod) {
 		}
 	}
 
-	if (currentoverlay != -1) {
+	if (enableoverlays && currentoverlay != -1) {
 		if (releaseprotect) {
 			releaseprotect = 0;
 		} else {
@@ -516,7 +523,6 @@ run(void) {
 	fd_set fds;
 	struct timeval tv;
 	double duration = 0.0;
-	int cyclemodidx;
 
 
 	xfd = ConnectionNumber(dpy);
@@ -528,6 +534,7 @@ run(void) {
 	XFlush(dpy);
 
 	while (running) {
+		usleep(100000L);
 		FD_ZERO(&fds);
 		FD_SET(xfd, &fds);
 		if (select(xfd + 1, &fds, NULL, NULL, &tv)) {
@@ -543,19 +550,13 @@ run(void) {
 				if (debug == 2) { printf("%f\n", duration); fflush(stdout); }
 				if (get_press_duration() >= overlay_delay) {
 					if (debug) { printf("press duration %f\n", duration); fflush(stdout); }
-					cyclemodidx = iscyclemod(ispressingkeysym);
-					if (cyclemodidx != -1) {
-						cyclemod();
-					} else {
-						showoverlay(hasoverlay(ispressingkeysym));
-					}
+					showoverlay(hasoverlay(ispressingkeysym));
 					pressbegin.tv_sec = 0;
 					pressbegin.tv_usec = 0;
 					ispressingkeysym = 0;
 				}
 			}
 		}
-		usleep(100000L);
 	}
 }
 
@@ -719,14 +720,20 @@ updatekeys() {
 
 void
 usage(char *argv0) {
-	fprintf(stderr, "usage: %s [-hdvD] [-g geometry] [-fn font]\n", argv0);
+	fprintf(stderr, "usage: %s [-hdvDOl] [-g geometry] [-fn font]\n", argv0);
+	fprintf(stderr, "Options:\n");
+	fprintf(stderr, "  -d         - Set Dock Window Type\n");
+	fprintf(stderr, "  -D         - Enable debug\n");
+	fprintf(stderr, "  -O         - Disable overlays\n");
+	fprintf(stderr, "  -l         - Comma separated list of layers to enable\n");
+	fprintf(stderr, "  -fn [font] - Set font (Xft, e.g: DejaVu Sans:bold:size=20)\n");
 	exit(1);
 }
 
 void
 cyclelayer() {
 	currentlayer++;
-	if (currentlayer >= LAYERS)
+	if (currentlayer >= numlayers)
 		currentlayer = 0;
 	if (debug) { printf("Cycling to layer %d\n", currentlayer); fflush(stdout); }
 	memcpy(&keys, layers[currentlayer], sizeof(keys_en));
@@ -735,28 +742,18 @@ cyclelayer() {
 }
 
 void
-cyclemod() {
-	int i;
-	//unpress all pressed keys
-	for(i = 0; i < LENGTH(keys); i++) {
-		if(keys[i].pressed) {
-			keys[i].pressed = 0;
-			drawkey(&keys[i]);
-		}
+togglelayer() {
+	if (currentlayer > 0) {
+		currentlayer = 0;
+	} else if (numlayers > 1) {
+		currentlayer = 1;
 	}
-	pressedmod = 0;
-	pressbegin.tv_sec = 0;
-	pressbegin.tv_usec = 0;
-	ispressingkeysym = 0;
-	currentcyclemod++;
-	if (currentcyclemod >= CYCLEMODS)
-		currentcyclemod = 0;
-	if (debug) { printf("Cycling modifier to %d\n", currentcyclemod); fflush(stdout); }
-	keys[CYCLEMODKEY].label = cyclemods[currentcyclemod].label;
-	keys[CYCLEMODKEY].keysym = cyclemods[currentcyclemod].keysym;
-	drawkey(&keys[CYCLEMODKEY]);
-	XSync(dpy, False);
+	if (debug) { printf("Toggling layer %d\n", currentlayer); fflush(stdout); }
+	memcpy(&keys, layers[currentlayer], sizeof(keys_en));
+	updatekeys();
+	drawkeyboard();
 }
+
 
 void
 showoverlay(int idx) {
@@ -802,15 +799,58 @@ sigterm(int sig)
 {
 	running = False;
 	sigtermd = True;
+	if (debug) { printf("Sigterm received\n"); fflush(stdout); }
+}
+
+
+void
+init_layers(char * layer_names_list) {
+	if (layer_names_list == NULL) {
+		numlayers = LAYERS;
+		memcpy(&layers, &available_layers, sizeof(available_layers));
+	} else {
+		char * s;
+		int j;
+		s = strtok(layer_names_list, ",");
+		while (s != NULL) {
+			if (numlayers+1 > LAYERS) die("too many layers specified");
+			int found = 0;
+			for (j = 0; j < LAYERS; j++) {
+				if (strcmp(layer_names[j], s) == 0) {
+					layers[numlayers] = available_layers[j];
+					printf("Adding layer %s\n", s);
+					found = 1;
+					break;
+				}
+			}
+			if (!found) {
+				fprintf(stderr, "Undefined layer: %s\n", s);
+				exit(3);
+			}
+			numlayers++;
+			s = strtok(NULL,",");
+		}
+	}
 }
 
 int
 main(int argc, char *argv[]) {
 	int i, xr, yr, bitm;
 	unsigned int wr, hr;
+	char * layer_names_list = NULL;
 
 	memcpy(&keys, &keys_en, sizeof(keys_en));
 	signal(SIGTERM, sigterm);
+
+	const char* enableoverlays_env = getenv("SVKBD_ENABLEOVERLAYS");
+	if (enableoverlays_env != NULL) enableoverlays = atoi(enableoverlays_env);
+	const char* layers_env = getenv("SVKBD_LAYERS");
+	if (layers_env != NULL) {
+		layer_names_list = malloc(128);
+		strcpy(layer_names_list, layers_env);
+	}
+
+
 	for (i = 1; argv[i]; i++) {
 		if(!strcmp(argv[i], "-v")) {
 			die("svkbd-"VERSION", © 2006-2020 svkbd engineers,"
@@ -842,8 +882,17 @@ main(int argc, char *argv[]) {
 			debug = 1;
 		} else if(!strcmp(argv[i], "-h")) {
 			usage(argv[0]);
+		} else if(!strcmp(argv[i], "-O")) {
+			enableoverlays = 0;
+		} else if(!strcmp(argv[i], "-l")) {
+			if(i >= argc - 1)
+				continue;
+			if (layer_names_list == NULL) layer_names_list = malloc(128);
+			strcpy(layer_names_list, argv[i+1]);
 		}
 	}
+
+	init_layers(layer_names_list);
 
 	if(!setlocale(LC_CTYPE, "") || !XSupportsLocale())
 		fprintf(stderr, "warning: no locale support\n");
@@ -853,5 +902,6 @@ main(int argc, char *argv[]) {
 	run();
 	cleanup();
 	XCloseDisplay(dpy);
+	if (layer_names_list != NULL) free(layer_names_list);
 	return 0;
 }

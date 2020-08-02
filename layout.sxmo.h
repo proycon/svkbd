@@ -1,7 +1,8 @@
-#define KEYS 40
+#define KEYS 43
 static Key keys[KEYS] = { NULL };
 
 static Key keys_en[KEYS] = {
+        { "Esc", XK_Escape, 1 },
         { 0, XK_q, 1 },
         { 0, XK_w, 1 },
         { 0, XK_e, 1 },
@@ -15,6 +16,7 @@ static Key keys_en[KEYS] = {
 
         { 0 }, /* New row */
 
+        { "'\"", XK_apostrophe, 1 },
         { 0, XK_a, 1 },
         { 0, XK_s, 1 },
         { 0, XK_d, 1 },
@@ -25,10 +27,10 @@ static Key keys_en[KEYS] = {
         { 0, XK_k, 1 },
         { 0, XK_l, 1 },
         { "/?", XK_slash, 1 },
-        /*{ "'", XK_apostrophe, 2 },*/
 
         { 0 }, /* New row */
 
+        { "123", XK_Mode_switch, 1 },
         { 0, XK_z, 1 },
         { 0, XK_x, 1 },
         { 0, XK_c, 1 },
@@ -36,25 +38,21 @@ static Key keys_en[KEYS] = {
         { 0, XK_b, 1 },
         { 0, XK_n, 1 },
         { 0, XK_m, 1 },
-        /*{ "/?", XK_slash, 1 },*/
         { "Tab", XK_Tab, 1 },
         { "⌫Bksp", XK_BackSpace, 2 },
 
         { 0 }, /* New row */
         { "↺", XK_Cancel, 1},
-        { "Shft", XK_Shift_L, 1 },
-        /*{ "L", XK_Left, 1 },*/
+        { "Shift", XK_Shift_L, 2 },
+        { "Ctrl", XK_Control_L, 1 },
+        { "Alt", XK_Alt_L, 1 },
+        { "", XK_space, 2 },
         { "↓", XK_Down, 1 },
         { "↑", XK_Up, 1 },
-        /*{ "R", XK_Right, 1 },*/
-        { "", XK_space, 2 },
-        { "Esc", XK_Escape, 1 },
-        { "Ctrl", XK_Control_L, 1 },
-        /*{ "Alt", XK_Alt_L, 1 },*/
         { "↲ Enter", XK_Return, 2 },
 };
 
-#define OVERLAYS 165
+#define OVERLAYS 197
 static Key overlay[OVERLAYS] = {
         { 0, XK_a }, //Overlay for a
         //---
@@ -196,6 +194,58 @@ static Key overlay[OVERLAYS] = {
         //---
         { "ř", XK_rcaron },
         { 0, XK_Cancel }, /* XK_Cancel signifies  overlay boundary */
+        //---
+        { 0, XK_Cyrillic_softsign }, //New overlay
+        //---
+        { "ъ", XK_Cyrillic_hardsign },
+        { 0, XK_Cancel }, /* XK_Cancel signifies  overlay boundary */
+        //---
+        { 0, XK_Cyrillic_ie }, //New overlay
+        //---
+        { "ё", XK_Cyrillic_io },
+        { 0, XK_Cancel }, /* XK_Cancel signifies  overlay boundary */
+        //---
+        { 0, XK_Cyrillic_e }, //New overlay
+        //---
+        { "Є", XK_Ukrainian_ie },
+        { 0, XK_Cancel }, /* XK_Cancel signifies  overlay boundary */
+        //---
+        { 0, XK_Cyrillic_i }, //New overlay
+        //---
+        { "і", XK_Ukrainian_i },
+        { "ї", XK_Ukrainian_yi },
+        { 0, XK_Cancel }, /* XK_Cancel signifies  overlay boundary */
+        //---
+        { 0, XK_Cyrillic_u }, //New overlay
+        //---
+        { "ў", XK_Byelorussian_shortu },
+        { 0, XK_Cancel }, /* XK_Cancel signifies  overlay boundary */
+		//---
+        { 0, XK_Cyrillic_shorti }, //New overlay
+        //---
+        { "ј", XK_Cyrillic_je },
+        { 0, XK_Cancel }, /* XK_Cancel signifies  overlay boundary */
+		//---
+        { 0, XK_Cyrillic_el }, //New overlay
+        //---
+        { "љ", XK_Cyrillic_lje },
+        { 0, XK_Cancel }, /* XK_Cancel signifies  overlay boundary */
+		//---
+        { 0, XK_Cyrillic_en }, //New overlay
+        //---
+        { "њ", XK_Cyrillic_nje },
+        { 0, XK_Cancel }, /* XK_Cancel signifies  overlay boundary */
+		//---
+        { 0, XK_Cyrillic_tse }, //New overlay
+        //---
+        { "џ", XK_Cyrillic_dzhe },
+        { 0, XK_Cancel }, /* XK_Cancel signifies  overlay boundary */
+		//---
+        { 0, XK_Cyrillic_che }, //New overlay
+        //---
+        { "ћ", XK_Serbian_tshe },
+        { "ђ", XK_Serbian_dje },
+        { 0, XK_Cancel }, /* XK_Cancel signifies  overlay boundary */
 		//---
         { "🙂", 0x101f642 }, //emoji overlay
         //---
@@ -262,6 +312,7 @@ static Key overlay[OVERLAYS] = {
 
 
 static Key keys_symbols[KEYS] = {
+  { "Esc", XK_Escape, 1 },
   { "1!", XK_1, 1 },
   { "2@", XK_2, 1 },
   { "3#", XK_3, 1 },
@@ -285,31 +336,34 @@ static Key keys_symbols[KEYS] = {
   { ".>", XK_period, 1 },
   { "/?", XK_slash, 1 },
   { "\\|", XK_backslash, 1 },
+  { ";:", XK_colon, 1 },
 
   { 0 }, /* New row */
 
+  { "abc", XK_Mode_switch, 1 },
   { "☺", 0x101f642, 1 },
   { "⇤", XK_Home, 1 },
   { "←", XK_Left, 1 },
   { "→", XK_Right, 1 },
   { "⇥", XK_End, 1 },
   { "⇊", XK_Next, 1 },
-  { ";:", XK_colon, 1 },
+  { "⇈", XK_Prior, 1 },
   { "Tab", XK_Tab, 1 },
   { "⌫Bksp", XK_BackSpace, 2 },
 
   { 0 }, /* New row */
   { "↺", XK_Cancel, 1},
-  { "Shft", XK_Shift_L, 1 },
+  { "Shift", XK_Shift_L, 2 },
+  { "Ctrl", XK_Control_L, 1 },
+  { "Alt", XK_Alt_L, 1 },
+  { "", XK_space, 2 },
   { "↓", XK_Down, 1 },
   { "↑", XK_Up, 1 },
-  { "", XK_space, 2 },
-  { "Esc", XK_Escape, 1 },
-  { "Ctrl", XK_Control_L, 1 },
   { "↲ Enter", XK_Return, 2 },
 };
 
 static Key keys_functions[KEYS] = {
+  { "Esc", XK_Escape, 1 },
   { "F1", XK_F1, 1 },
   { "F2", XK_F2, 1 },
   { "F3", XK_F3, 1 },
@@ -323,6 +377,7 @@ static Key keys_functions[KEYS] = {
 
   { 0 }, /* New row */
 
+  { "≅", XK_KP_Insert, 1 },
   { "▶", XF86XK_AudioPlay, 1 },
   { "●", XF86XK_AudioRecord, 1 },
   { "■", XF86XK_AudioStop, 1 },
@@ -336,6 +391,7 @@ static Key keys_functions[KEYS] = {
 
   { 0 }, /* New row */
 
+  { "abc", XK_Mode_switch, 1 },
   { "Del", XK_Delete, 1 },
   { "⇤", XK_Home, 1 },
   { "←", XK_Left, 1 },
@@ -348,30 +404,80 @@ static Key keys_functions[KEYS] = {
 
   { 0 }, /* New row */
   { "↺", XK_Cancel, 1},
-  { "Shft", XK_Shift_L, 1 },
+  { "Shift", XK_Shift_L, 2 },
+  { "Ctrl", XK_Control_L, 1 },
+  { "Alt", XK_Alt_L, 1 },
+  { "", XK_space, 2 },
   { "↓", XK_Down, 1 },
   { "↑", XK_Up, 1 },
-  { "", XK_space, 2 },
-  { "Esc", XK_Escape, 1 },
-  { "Ctrl", XK_Control_L, 1 },
   { "↲ Enter", XK_Return, 2 },
 };
 
 
-#define LAYERS 3
-static Key* layers[LAYERS] = {
+static Key keys_ru[KEYS] = {
+        { "и", XK_Cyrillic_shorti, 1 },
+        { "ц", XK_Cyrillic_tse, 1 },
+        { "у", XK_Cyrillic_u, 1 },
+        { "к", XK_Cyrillic_ka, 1 },
+        { "е", XK_Cyrillic_ie, 1 },
+        { "н", XK_Cyrillic_en, 1 },
+        { "г", XK_Cyrillic_ghe, 1 },
+        { "ш", XK_Cyrillic_sha, 1 },
+        { "щ", XK_Cyrillic_shcha, 1 },
+        { "з", XK_Cyrillic_ze, 1 },
+        { "х", XK_Cyrillic_ha, 1 },
+
+        { 0 }, /* New row */
+
+        { "ф", XK_Cyrillic_ef, 1 },
+        { "ы", XK_Cyrillic_yeru, 1 },
+        { "в", XK_Cyrillic_ve, 1 },
+        { "а", XK_Cyrillic_a, 1 },
+        { "п", XK_Cyrillic_pe, 1 },
+        { "о", XK_Cyrillic_o, 1 },
+        { "л", XK_Cyrillic_el, 1 },
+        { "д", XK_Cyrillic_de, 1 },
+        { "ж", XK_Cyrillic_zhe, 1 },
+        { "э", XK_Cyrillic_e, 1 },
+        { "ю", XK_Cyrillic_yu, 1 },
+
+        { 0 }, /* New row */
+
+        { "123", XK_Mode_switch, 1 },
+        { "я", XK_Cyrillic_ya, 1 },
+        { "ч", XK_Cyrillic_che, 1 },
+        { "с", XK_Cyrillic_es, 1 },
+        { "м", XK_Cyrillic_em, 1 },
+        { "и", XK_Cyrillic_i, 1 },
+        { "т", XK_Cyrillic_te, 1 },
+        { "ь", XK_Cyrillic_softsign, 1 },
+        { "б", XK_Cyrillic_be, 1 },
+        { "⌫Bksp", XK_BackSpace, 2 },
+
+        { 0 }, /* New row */
+        { "↺", XK_Cancel, 1},
+        { "Shift", XK_Shift_L, 2 },
+        { "Ctrl", XK_Control_L, 1 },
+        { "Alt", XK_Alt_L, 1 },
+        { "", XK_space, 2 },
+        { "↓", XK_Down, 1 },
+        { "↑", XK_Up, 1 },
+        { "↲ Enter", XK_Return, 2 },
+};
+
+#define LAYERS 4
+static char* layer_names[LAYERS] = {
+    "en",
+    "symbols",
+    "functions",
+    "ru",
+};
+
+static Key* available_layers[LAYERS] = {
     keys_en,
     keys_symbols,
     keys_functions,
-};
-
-
-#define CYCLEMODKEY (KEYS - 3) //third last key (Escape)
-#define CYCLEMODS 3
-static Key cyclemods[CYCLEMODS] = {
-  { "Esc", XK_Escape, 1 },
-  { "Alt", XK_Alt_L, 1 },
-  { "AGr", XK_ISO_Level3_Shift, 1 },
+    keys_ru
 };
 
 
