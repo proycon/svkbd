@@ -63,6 +63,7 @@ static void buttonrelease(XEvent *e);
 static void cleanup(void);
 static void configurenotify(XEvent *e);
 static void countrows();
+static int countkeys(Key *k);
 static void drawkeyboard(void);
 static void drawkey(Key *k);
 static void expose(XEvent *e);
@@ -77,6 +78,7 @@ static void simulate_keyrelease(KeySym keysym);
 static void showoverlay(int idx);
 static void hideoverlay();
 static void cyclelayer();
+static void setlayer();
 static void togglelayer();
 static void unpress(Key *k, KeySym mod);
 static void updatekeys();
@@ -109,6 +111,7 @@ static int rows = 0, ww = 0, wh = 0, wx = 0, wy = 0;
 static char *name = "svkbd";
 static int debug = 0;
 static int numlayers = 0;
+static int numkeys = 0;
 
 static KeySym ispressingkeysym;
 
@@ -130,7 +133,7 @@ motionnotify(XEvent *e)
 	XPointerMovedEvent *ev = &e->xmotion;
 	int i;
 
-	for(i = 0; i < LENGTH(keys); i++) {
+	for(i = 0; i < numkeys; i++) {
 		if(keys[i].keysym && ev->x > keys[i].x
 				&& ev->x < keys[i].x + keys[i].w
 				&& ev->y > keys[i].y
@@ -221,7 +224,7 @@ cleanup(void) {
 			}
 		}
 		if (debug) { printf("Cleanup: simulating key release\n"); fflush(stdout); }
-		for (i = 0; i < LENGTH(keys); i++) {
+		for (i = 0; i < numkeys; i++) {
 			XTestFakeKeyEvent(dpy, XKeysymToKeycode(dpy, keys[i].keysym), False, 0);
 		}
 	}
@@ -253,10 +256,26 @@ void
 countrows() {
 	int i = 0;
 
-	for(i = 0, rows = 1; i < LENGTH(keys); i++) {
+	for(i = 0, rows = 1; i < numkeys; i++) {
 		if(keys[i].keysym == 0)
 			rows++;
 	}
+}
+
+int
+countkeys(Key * layer) {
+	int keys = 0;
+	int i;
+
+	for(i = 0; i < KEYS; i++) {
+		if (i > 0 && layer[i].keysym == 0 && layer[i-1].keysym == 0) {
+			keys--;
+			break;
+		}
+		keys++;
+	}
+
+	return keys;
 }
 
 
@@ -264,7 +283,7 @@ void
 drawkeyboard(void) {
 	int i;
 
-	for(i = 0; i < LENGTH(keys); i++) {
+	for(i = 0; i < numkeys; i++) {
 		if(keys[i].keysym != 0)
 			drawkey(&keys[i]);
 	}
@@ -315,7 +334,7 @@ Key *
 findkey(int x, int y) {
 	int i;
 
-	for(i = 0; i < LENGTH(keys); i++) {
+	for(i = 0; i < numkeys; i++) {
 		if(keys[i].keysym && x > keys[i].x &&
 				x < keys[i].x + keys[i].w &&
 				y > keys[i].y && y < keys[i].y + keys[i].h) {
@@ -375,7 +394,7 @@ press(Key *k, KeySym mod) {
 			}
 		} else {
 			if (debug) { printf("Simulating press: %ld\n", k->keysym); fflush(stdout); }
-			for(i = 0; i < LENGTH(keys); i++) {
+			for(i = 0; i < numkeys; i++) {
 				if(keys[i].pressed && IsModifierKey(keys[i].keysym)) {
 					simulate_keypress(keys[i].keysym);
 				}
@@ -386,7 +405,7 @@ press(Key *k, KeySym mod) {
 			}
 			simulate_keypress(k->keysym);
 
-			for(i = 0; i < LENGTH(keys); i++) {
+			for(i = 0; i < numkeys; i++) {
 				if(keys[i].pressed && IsModifierKey(keys[i].keysym)) {
 					simulate_keyrelease(keys[i].keysym);
 				}
@@ -457,7 +476,7 @@ unpress(Key *k, KeySym mod) {
 			if (get_press_duration() < overlay_delay) {
 				if (debug) { printf("Delayed simulation of press after release: %ld\n", k->keysym); fflush(stdout); }
 				//simulate the press event, as we postponed it earlier in press()
-				for(i = 0; i < LENGTH(keys); i++) {
+				for(i = 0; i < numkeys; i++) {
 					if(keys[i].pressed && IsModifierKey(keys[i].keysym)) {
 						simulate_keypress(keys[i].keysym);
 					}
@@ -484,7 +503,7 @@ unpress(Key *k, KeySym mod) {
 	}
 
 
-	for(i = 0; i < LENGTH(keys); i++) {
+	for(i = 0; i < numkeys; i++) {
 		if(keys[i].pressed && !IsModifierKey(keys[i].keysym)) {
 			simulate_keyrelease(keys[i].keysym);
 			keys[i].pressed = 0;
@@ -492,13 +511,13 @@ unpress(Key *k, KeySym mod) {
 			break;
 		}
 	}
-	if(i != LENGTH(keys)) {
+	if(i != numkeys) {
 		if(pressedmod) {
 			simulate_keyrelease(mod);
 		}
 		pressedmod = 0;
 
-		for(i = 0; i < LENGTH(keys); i++) {
+		for(i = 0; i < numkeys; i++) {
 			if(keys[i].pressed) {
 				simulate_keyrelease(keys[i].keysym);
 				keys[i].pressed = 0;
@@ -634,7 +653,7 @@ setup(void) {
 	if(!ww)
 		ww = sw;
 	if(!wh)
-		wh = sh * rows / 32;
+		wh = sh * rows / heightfactor;
 
 	if(!wx)
 		wx = 0;
@@ -645,7 +664,7 @@ setup(void) {
 	if(wy < 0)
 		wy = sh + wy - wh;
 
-	for(i = 0; i < LENGTH(keys); i++)
+	for(i = 0; i < numkeys; i++)
 		keys[i].pressed = 0;
 
 	wa.override_redirect = !wmborder;
@@ -702,10 +721,10 @@ updatekeys() {
 	int x = 0, y = 0, h, base, r = rows;
 
 	h = (wh - 1) / rows;
-	for(i = 0; i < LENGTH(keys); i++, r--) {
-		for(j = i, base = 0; j < LENGTH(keys) && keys[j].keysym != 0; j++)
+	for(i = 0; i < numkeys; i++, r--) {
+		for(j = i, base = 0; j < numkeys && keys[j].keysym != 0; j++)
 			base += keys[j].width;
-		for(x = 0; i < LENGTH(keys) && keys[i].keysym != 0; i++) {
+		for(x = 0; i < numkeys && keys[i].keysym != 0; i++) {
 			keys[i].x = x;
 			keys[i].y = y;
 			keys[i].w = keys[i].width * (ww - 1) / base;
@@ -720,14 +739,21 @@ updatekeys() {
 
 void
 usage(char *argv0) {
-	fprintf(stderr, "usage: %s [-hdvDOl] [-g geometry] [-fn font]\n", argv0);
+	fprintf(stderr, "usage: %s [-hdvDO] [-g geometry] [-fn font] [-l layers] [-s initial_layer]\n", argv0);
 	fprintf(stderr, "Options:\n");
 	fprintf(stderr, "  -d         - Set Dock Window Type\n");
 	fprintf(stderr, "  -D         - Enable debug\n");
 	fprintf(stderr, "  -O         - Disable overlays\n");
 	fprintf(stderr, "  -l         - Comma separated list of layers to enable\n");
+	fprintf(stderr, "  -s         - Layer to select on program start\n");
+	fprintf(stderr, "  -H [int]	 - Height fraction, one key row takes 1/x of the screen height");
 	fprintf(stderr, "  -fn [font] - Set font (Xft, e.g: DejaVu Sans:bold:size=20)\n");
 	exit(1);
+}
+
+void setlayer() {
+	numkeys = countkeys(layers[currentlayer]);
+	memcpy(&keys, layers[currentlayer], sizeof(Key) * numkeys);
 }
 
 void
@@ -736,7 +762,7 @@ cyclelayer() {
 	if (currentlayer >= numlayers)
 		currentlayer = 0;
 	if (debug) { printf("Cycling to layer %d\n", currentlayer); fflush(stdout); }
-	memcpy(&keys, layers[currentlayer], sizeof(keys_en));
+	setlayer();
 	updatekeys();
 	drawkeyboard();
 }
@@ -749,7 +775,7 @@ togglelayer() {
 		currentlayer = 1;
 	}
 	if (debug) { printf("Toggling layer %d\n", currentlayer); fflush(stdout); }
-	memcpy(&keys, layers[currentlayer], sizeof(keys_en));
+	setlayer();
 	updatekeys();
 	drawkeyboard();
 }
@@ -760,7 +786,7 @@ showoverlay(int idx) {
 	if (debug) { printf("Showing overlay %d\n", idx); fflush(stdout); }
 	int i,j;
 	//unpress existing key (visually only)
-	for(i = 0; i < LENGTH(keys); i++) {
+	for(i = 0; i < numkeys; i++) {
 		if(keys[i].pressed && !IsModifierKey(keys[i].keysym)) {
 			keys[i].pressed = 0;
 			drawkey(&keys[i]);
@@ -804,21 +830,32 @@ sigterm(int sig)
 
 
 void
-init_layers(char * layer_names_list) {
+init_layers(char * layer_names_list, const char * initial_layer_name) {
+	int j;
 	if (layer_names_list == NULL) {
 		numlayers = LAYERS;
 		memcpy(&layers, &available_layers, sizeof(available_layers));
+		if (initial_layer_name != NULL) {
+			for (j = 0; j < LAYERS; j++) {
+				if (strcmp(layer_names[j], initial_layer_name) == 0) {
+					currentlayer = j;
+					break;
+				}
+			}
+		}
 	} else {
 		char * s;
-		int j;
 		s = strtok(layer_names_list, ",");
 		while (s != NULL) {
 			if (numlayers+1 > LAYERS) die("too many layers specified");
 			int found = 0;
 			for (j = 0; j < LAYERS; j++) {
 				if (strcmp(layer_names[j], s) == 0) {
+					fprintf(stderr, "Adding layer %s\n", s);
 					layers[numlayers] = available_layers[j];
-					printf("Adding layer %s\n", s);
+					if (initial_layer_name != NULL && strcmp(layer_names[j], initial_layer_name) == 0) {
+						currentlayer = numlayers;
+					}
 					found = 1;
 					break;
 				}
@@ -831,17 +868,19 @@ init_layers(char * layer_names_list) {
 			s = strtok(NULL,",");
 		}
 	}
+	setlayer();
 }
 
 int
 main(int argc, char *argv[]) {
 	int i, xr, yr, bitm;
 	unsigned int wr, hr;
+	char * initial_layer_name = NULL;
 	char * layer_names_list = NULL;
 
-	memcpy(&keys, &keys_en, sizeof(keys_en));
 	signal(SIGTERM, sigterm);
 
+	//parse environment variables
 	const char* enableoverlays_env = getenv("SVKBD_ENABLEOVERLAYS");
 	if (enableoverlays_env != NULL) enableoverlays = atoi(enableoverlays_env);
 	const char* layers_env = getenv("SVKBD_LAYERS");
@@ -849,8 +888,11 @@ main(int argc, char *argv[]) {
 		layer_names_list = malloc(128);
 		strcpy(layer_names_list, layers_env);
 	}
+	const char* heightfactor_s = getenv("SVKBD_HEIGHTFACTOR");
+	if (heightfactor_s != NULL)
+		heightfactor = atoi(heightfactor_s);
 
-
+	//parse command line arguments
 	for (i = 1; argv[i]; i++) {
 		if(!strcmp(argv[i], "-v")) {
 			die("svkbd-"VERSION", © 2006-2020 svkbd engineers,"
@@ -888,11 +930,22 @@ main(int argc, char *argv[]) {
 			if(i >= argc - 1)
 				continue;
 			if (layer_names_list == NULL) layer_names_list = malloc(128);
-			strcpy(layer_names_list, argv[i+1]);
+			strcpy(layer_names_list, argv[++i]);
+		} else if(!strcmp(argv[i], "-s")) {
+			if(i >= argc - 1)
+				continue;
+			initial_layer_name = argv[++i];
+		} else if(!strcmp(argv[i], "-H")) {
+			if(i >= argc - 1)
+				continue;
+			heightfactor = atoi(argv[++i]);
+		} else {
+			fprintf(stderr, "Invalid argument: %s\n", argv[i]);
+			exit(2);
 		}
 	}
 
-	init_layers(layer_names_list);
+	init_layers(layer_names_list, initial_layer_name);
 
 	if(!setlocale(LC_CTYPE, "") || !XSupportsLocale())
 		fprintf(stderr, "warning: no locale support\n");

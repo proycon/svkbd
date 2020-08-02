@@ -68,7 +68,7 @@ static Key overlay[OVERLAYS] = {
         { "æ", XK_ae },
         { 0, XK_Cancel }, /* XK_Cancel signifies  overlay boundary */
         //--
-        { 0, XK_e }, //Overlay for e
+        { 0, XK_e }, //Overlay for e (first item after boundary defines the trigger)
         //---
         { "è", XK_egrave },
         { "é", XK_eacute },
@@ -465,11 +465,45 @@ static Key keys_ru[KEYS] = {
         { "↲ Enter", XK_Return, 2 },
 };
 
-#define LAYERS 4
+static Key keys_dialer[KEYS] = {
+        { "Esc", XK_Escape, 1 },
+        { "1!", XK_1, 1 },
+        { "2@", XK_2, 1 },
+        { "3#", XK_3, 1 },
+        { "⌫Bksp", XK_BackSpace, 2 },
+        { 0 }, /* New row */
+
+        { "Shift", XK_Shift_L, 1 },
+        { "4$", XK_4, 1 },
+        { "5%", XK_5, 1 },
+        { "6^", XK_6, 1 },
+        { "-_", XK_minus, 1 },
+        { ",<", XK_comma, 1 },
+        { 0 }, /* New row */
+
+        { "abc", XK_Mode_switch, 1 },
+        { "7&", XK_7, 1 },
+        { "8*", XK_8, 1 },
+        { "9(", XK_9, 1 },
+        { "=+", XK_equal, 1 },
+        { "/?", XK_slash, 1 },
+        { 0 }, /* New row */
+
+        { "↺", XK_Cancel, 1},
+        { "", XK_space, 1 },
+        { "0)", XK_0, 1 },
+        { ".>", XK_period, 1 },
+        { "↲ Enter", XK_Return, 2},
+        { 0 }, /* New row */
+        { 0 }, /* Last item (double 0) */
+};
+
+#define LAYERS 5
 static char* layer_names[LAYERS] = {
     "en",
     "symbols",
     "functions",
+    "dialer",
     "ru",
 };
 
@@ -477,6 +511,7 @@ static Key* available_layers[LAYERS] = {
     keys_en,
     keys_symbols,
     keys_functions,
+    keys_dialer,
     keys_ru
 };
 

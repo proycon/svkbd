@@ -53,6 +53,13 @@ overlay functionality with the ``-O`` flag or by setting the environment variabl
 also a key on the function layer of the keyboard itself to enable/disable this behaviour on the fly. Its label shows
 ``≅`` when the overlay functionality is enabled and ``≇`` when not.
 
+Notes
+---------
+
+This virtual keyboard does not actually modify the X keyboard layout, it simply relies on a standard US QWERTY layout
+(setxkbmap us) being activated. If you use another XKB layout you will get unpredictable output that does not match the
+labels on the virtual keycaps.
+
 Repository
 ----------
 
