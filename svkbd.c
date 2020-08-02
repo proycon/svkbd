@@ -14,6 +14,8 @@
 #include <X11/Xproto.h>
 #include <X11/extensions/XTest.h>
 #include <signal.h>
+#include <sys/select.h>
+
 
 /* macros */
 #define MAX(a, b)       ((a) > (b) ? (a) : (b))
@@ -97,10 +99,10 @@ static Bool running = True, isdock = False;
 static KeySym pressedmod = 0;
 static int rows = 0, ww = 0, wh = 0, wx = 0, wy = 0;
 static char *name = "svkbd";
-static int terminate = 0;
 
 Bool ispressing = False;
 Bool baselayer = True;
+Bool sigtermd = False;
 
 /* configuration, allows nested code to access above variables */
 #include "config.h"
@@ -188,6 +190,21 @@ buttonrelease(XEvent *e) {
 
 void
 cleanup(void) {
+	int i;
+
+	// E.g. Generally in scripts we call SIGTERM on svkbd in which case
+	//      if the user is holding for example the enter key (to execute
+	//      the kill or script that does the kill), that causes an issue
+	//      since then X doesn't know the keyup is never coming.. (since
+	//      process will be dead before finger lifts - in that case we
+	//      just trigger out fake up presses for all keys
+	if (sigtermd) {
+		for (i = 0; i < LENGTH(keys); i++) {
+			XTestFakeKeyEvent(dpy, XKeysymToKeycode(dpy, keys[i].keysym), False, 0);
+		}
+	}
+	XSync(dpy, False);
+
 	if(dc.font.set)
 		XFreeFontSet(dpy, dc.font.set);
 	else
@@ -438,13 +455,21 @@ unpress(Key *k, KeySym mod) {
 void
 run(void) {
 	XEvent ev;
+	int xfd;
+	fd_set fds;
+	struct timeval tv;
 
-	/* main event loop */
-	XSync(dpy, False);
-	while(running) {
+	xfd = ConnectionNumber(dpy);
+	FD_ZERO(&fds);
+	FD_SET(xfd, &fds);
+	tv.tv_usec = 0;
+	tv.tv_sec = 1;
+	while (running) {
+		select(xfd + 1, &fds, NULL, NULL, &tv);
 		XNextEvent(dpy, &ev);
-		if(handler[ev.type])
+		if(handler[ev.type]) {
 			(handler[ev.type])(&ev); /* call handler */
+		}
 	}
 }
 
@@ -597,16 +622,8 @@ togglelayer() {
 void
 sigterm(int sig)
 {
-	// E.g. Since sometimes we might use svkbd, to kill svkbd - e.g. in
-	// terminal or script (pkill svkbd), .. that signal might register before
-	// the keyup event is processed so X thinks the key is held down forever..
-	// so here we keyup every key & exit (XK_Break) to keyup cleanup properly
-	int i;
-	for(i = 0; i < LENGTH(keys); i++) {
-	  XTestFakeKeyEvent(dpy, XKeysymToKeycode(dpy, keys[i].keysym), False, 0);
-	}
 	running = False;
-	//XTestFakeKeyEvent(dpy, XK_Break, False, 0);
+	sigtermd = True;
 }
 
 int
