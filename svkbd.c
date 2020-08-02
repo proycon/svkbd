@@ -13,6 +13,7 @@
 #include <X11/Xutil.h>
 #include <X11/Xproto.h>
 #include <X11/extensions/XTest.h>
+#include <signal.h>
 
 /* macros */
 #define MAX(a, b)       ((a) > (b) ? (a) : (b))
@@ -96,8 +97,10 @@ static Bool running = True, isdock = False;
 static KeySym pressedmod = 0;
 static int rows = 0, ww = 0, wh = 0, wx = 0, wy = 0;
 static char *name = "svkbd";
+static int terminate = 0;
 
 Bool ispressing = False;
+Bool baselayer = True;
 
 /* configuration, allows nested code to access above variables */
 #include "config.h"
@@ -393,7 +396,10 @@ unpress(Key *k, KeySym mod) {
 	if(k != NULL) {
 		switch(k->keysym) {
 		case XK_Cancel:
-			exit(0);
+			togglelayer();
+			break;
+		case XK_Break:
+		  running = False;
 		default:
 			break;
 		}
@@ -580,11 +586,36 @@ usage(char *argv0) {
 	exit(1);
 }
 
+void
+togglelayer() {
+	memcpy(&keys, baselayer ? &keys_symbols : &keys_en, sizeof(keys_en));
+	updatekeys();
+	drawkeyboard();
+	baselayer = !baselayer;
+}
+
+void
+sigterm(int sig)
+{
+	// E.g. Since sometimes we might use svkbd, to kill svkbd - e.g. in
+	// terminal or script (pkill svkbd), .. that signal might register before
+	// the keyup event is processed so X thinks the key is held down forever..
+	// so here we keyup every key & exit (XK_Break) to keyup cleanup properly
+	int i;
+	for(i = 0; i < LENGTH(keys); i++) {
+	  XTestFakeKeyEvent(dpy, XKeysymToKeycode(dpy, keys[i].keysym), False, 0);
+	}
+	running = False;
+	//XTestFakeKeyEvent(dpy, XK_Break, False, 0);
+}
+
 int
 main(int argc, char *argv[]) {
 	int i, xr, yr, bitm;
 	unsigned int wr, hr;
 
+	signal(SIGTERM, sigterm);
+	memcpy(&keys, &keys_en, sizeof(keys_en));
 	for (i = 1; argv[i]; i++) {
 		if(!strcmp(argv[i], "-v")) {
 			die("svkbd-"VERSION", © 2006-2016 svkbd engineers,"
