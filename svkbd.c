@@ -37,13 +37,10 @@ enum { SchemeNorm, SchemePress, SchemeHighlight, SchemeLast };
 enum { NetWMWindowType, NetLast };
 
 /* typedefs */
-typedef unsigned int uint;
-typedef unsigned long ulong;
-
 typedef struct {
 	char *label;
 	KeySym keysym;
-	uint width;
+	unsigned int width;
 	int x, y, w, h;
 	Bool pressed;
 	Bool highlighted;
@@ -51,7 +48,7 @@ typedef struct {
 
 typedef struct {
 	KeySym mod;
-	uint button;
+	unsigned int button;
 } Buttonmod;
 
 /* function declarations */
@@ -349,9 +346,8 @@ hasoverlay(KeySym keysym)
 void
 leavenotify(XEvent *e)
 {
-	if (currentoverlay != -1) {
+	if (currentoverlay != -1)
 		hideoverlay();
-	}
 	unpress(NULL, 0);
 }
 
@@ -463,7 +459,8 @@ unpress(Key *k, KeySym mod)
 			enableoverlays = !enableoverlays;
 			break;
 		case XK_Break:
-		  running = False;
+			running = False;
+			break;
 		default:
 			break;
 		}
@@ -599,9 +596,9 @@ setup(void)
 	XTextProperty str;
 	XSizeHints *sizeh = NULL;
 	XClassHint *ch;
+	XWMHints *wmh;
 	Atom atype = -1;
 	int i, j, sh, sw;
-	XWMHints *wmh;
 
 #ifdef XINERAMA
 	XineramaScreenInfo *info = NULL;
@@ -629,7 +626,7 @@ setup(void)
 
 	/* find an unused keycode to use as a temporary keycode (derived from source:
 	   https://stackoverflow.com/questions/44313966/c-xtest-emitting-key-presses-for-every-unicode-character) */
-	KeySym *keysyms = NULL;
+	KeySym *keysyms;
 	int keysyms_per_keycode = 0;
 	int keycode_low, keycode_high;
 	Bool key_is_empty;
@@ -817,10 +814,10 @@ showoverlay(int idx)
 	}
 
 	for (i = idx, j=0; i < OVERLAYS; i++, j++) {
-		if (overlay[i].keysym == XK_Cancel) {
+		if (overlay[i].keysym == XK_Cancel)
 			break;
-		}
-		while (keys[j].keysym == 0) j++;
+		while (keys[j].keysym == 0)
+			j++;
 		keys[j].label = overlay[i].label;
 		keys[j].keysym = overlay[i].keysym;
 	}
@@ -835,7 +832,7 @@ showoverlay(int idx)
 void
 hideoverlay(void)
 {
-	if (debug) printdbg("Hiding overlay %d\n", currentoverlay);
+	if (debug) printdbg("Hiding overlay, overlay was #%d\n", currentoverlay);
 	currentoverlay = -1;
 	overlaykeysym = 0;
 	currentlayer = -1;
@@ -847,7 +844,7 @@ sigterm(int signo)
 {
 	running = False;
 	sigtermd = True;
-	if (debug) printdbg("Sigterm received\n");
+	if (debug) printdbg("SIGTERM received\n");
 }
 
 void
