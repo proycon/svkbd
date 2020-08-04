@@ -1,4 +1,4 @@
-.Dd August 2, 2020
+.Dd August 4, 2020
 .Dt SVKBD 1
 .Os
 .Sh NAME
@@ -20,7 +20,6 @@
 .Nm
 is a simple virtual keyboard for X.org, intended to be used in environments, where no
 keyboard is available.
-.Pp
 .Sh OPTIONS
 .Bl -tag -width Ds
 .It Fl D
@@ -36,12 +35,12 @@ geometry format.
 .It Fl h
 Show the usage information.
 .It Fl H Ar heightfactor
-Affects the vertical space taken by the keyboard. One row of keys takes up
-1/heighfactor of the screen's total height.
+Affects the vertical space taken by the keyboard.
+One row of keys takes up 1/heighfactor of the screen's total height.
 .It Fl l Ar layers
 Comma separated list of layers to enable (by name). If not set, all layers
-in the layout will be available. The layer names are defined by the layout
-you compiled.
+in the layout will be available.
+The layer names are defined by the layout you compiled.
 .It Fl s Ar layer
 The layer to show on program start-up (by name). If not set, the first
 layer of the layout will be shown.
@@ -52,17 +51,17 @@ Show the version information.
 .El
 .Sh ENVIRONMENT
 The following environment variables can be defined, providing
-an alternative to some of the command line parameters. The command
-line parameters, however, always take precedence:
+an alternative to some of the command line parameters.
+The command line parameters, however, always take precedence:
 .Bl -tag -width Ds
-.It \fB SVKBD_LAYERS
+.It Ev SVKBD_LAYERS
 Comma separated list of layers to enable (by name). The layer names are defined by the layout
 you compiled.
-.It \fB SVKBD_ENABLEOVERLAYS
+.It Ev SVKBD_ENABLEOVERLAYS
 Set this to 0 if you want to disable overlay functionality.
-.It \fB SVKBD_HEIGHTFACTOR
-Affects the vertical space taken by the keyboard. One row of keys takes up
-1/heighfactor of the screen's total height.
+.It Ev SVKBD_HEIGHTFACTOR
+Affects the vertical space taken by the keyboard.
+One row of keys takes up 1/heighfactor of the screen's total height.
 .El
 .Sh SEE ALSO
 .Xr XParseGeometry 3
