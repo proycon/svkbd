@@ -1,12 +1,16 @@
-/* See LICENSE file for copyright and license details.
- *
- * To understand svkbd, start reading main().
- */
+/* See LICENSE file for copyright and license details. */
+#include <sys/select.h>
+#include <sys/time.h>
+
 #include <locale.h>
+#include <signal.h>
 #include <stdarg.h>
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+#include <time.h>
+#include <unistd.h>
+
 #include <X11/keysym.h>
 #include <X11/keysymdef.h>
 #include <X11/XF86keysym.h>
@@ -19,20 +23,14 @@
 #ifdef XINERAMA
 #include <X11/extensions/Xinerama.h>
 #endif
-#include <signal.h>
-#include <time.h>
-#include <unistd.h>
-#include <sys/select.h>
-#include <sys/time.h>
 
 #include "drw.h"
 #include "util.h"
 
-
 /* macros */
-#define LENGTH(x)       (sizeof x / sizeof x[0])
-#define TEXTW(X)        (drw_fontset_getwidth(drw, (X)))
-#define STRINGTOKEYSYM(X)			(XStringToKeySym(X))
+#define LENGTH(x)         (sizeof x / sizeof x[0])
+#define TEXTW(X)          (drw_fontset_getwidth(drw, (X)))
+#define STRINGTOKEYSYM(X) (XStringToKeySym(X))
 
 /* enums */
 enum { SchemeNorm, SchemePress, SchemeHighlight, SchemeLast };
@@ -57,14 +55,14 @@ typedef struct {
 } Buttonmod;
 
 /* function declarations */
-static void printdbg(const char * fmt, ...);
+static void printdbg(const char *fmt, ...);
 static void motionnotify(XEvent *e);
 static void buttonpress(XEvent *e);
 static void buttonrelease(XEvent *e);
 static void cleanup(void);
 static void configurenotify(XEvent *e);
 static void countrows();
-static int countkeys(Key *k);
+static int countkeys(Key *layer);
 static void drawkeyboard(void);
 static void drawkey(Key *k);
 static void expose(XEvent *e);
@@ -135,13 +133,13 @@ motionnotify(XEvent *e)
 	XPointerMovedEvent *ev = &e->xmotion;
 	int i;
 
-	for(i = 0; i < numkeys; i++) {
-		if(keys[i].keysym && ev->x > keys[i].x
+	for (i = 0; i < numkeys; i++) {
+		if (keys[i].keysym && ev->x > keys[i].x
 				&& ev->x < keys[i].x + keys[i].w
 				&& ev->y > keys[i].y
 				&& ev->y < keys[i].y + keys[i].h) {
-			if(keys[i].highlighted != True) {
-				if(ispressing) {
+			if (keys[i].highlighted != True) {
+				if (ispressing) {
 					keys[i].pressed = True;
 				} else {
 					keys[i].highlighted = True;
@@ -151,12 +149,12 @@ motionnotify(XEvent *e)
 			continue;
 		}
 
-		if(!IsModifierKey(keys[i].keysym) && keys[i].pressed == True) {
+		if (!IsModifierKey(keys[i].keysym) && keys[i].pressed == True) {
 			unpress(&keys[i], 0);
 
 			drawkey(&keys[i]);
 		}
-		if(keys[i].highlighted == True) {
+		if (keys[i].highlighted == True) {
 			keys[i].highlighted = False;
 			drawkey(&keys[i]);
 		}
@@ -164,50 +162,53 @@ motionnotify(XEvent *e)
 }
 
 void
-buttonpress(XEvent *e) {
-	int i;
+buttonpress(XEvent *e)
+{
 	XButtonPressedEvent *ev = &e->xbutton;
 	Key *k;
 	KeySym mod = 0;
+	int i;
 
 	ispressing = True;
 
-	for(i = 0; i < LENGTH(buttonmods); i++) {
-		if(ev->button == buttonmods[i].button) {
+	for (i = 0; i < LENGTH(buttonmods); i++) {
+		if (ev->button == buttonmods[i].button) {
 			mod = buttonmods[i].mod;
 			break;
 		}
 	}
-	if((k = findkey(ev->x, ev->y)))
+	if ((k = findkey(ev->x, ev->y)))
 		press(k, mod);
 }
 
 void
-buttonrelease(XEvent *e) {
-	int i;
+buttonrelease(XEvent *e)
+{
 	XButtonPressedEvent *ev = &e->xbutton;
 	Key *k;
 	KeySym mod = 0;
+	int i;
 
 	ispressing = False;
 
-	for(i = 0; i < LENGTH(buttonmods); i++) {
-		if(ev->button == buttonmods[i].button) {
+	for (i = 0; i < LENGTH(buttonmods); i++) {
+		if (ev->button == buttonmods[i].button) {
 			mod = buttonmods[i].mod;
 			break;
 		}
 	}
 
-	if(ev->x < 0 || ev->y < 0) {
+	if (ev->x < 0 || ev->y < 0) {
 		unpress(NULL, mod);
 	} else {
-		if((k = findkey(ev->x, ev->y)))
+		if ((k = findkey(ev->x, ev->y)))
 			unpress(k, mod);
 	}
 }
 
 void
-cleanup(void) {
+cleanup(void)
+{
 	int i;
 
 	for (i = 0; i < SchemeLast; i++)
@@ -222,10 +223,11 @@ cleanup(void) {
 }
 
 void
-configurenotify(XEvent *e) {
+configurenotify(XEvent *e)
+{
 	XConfigureEvent *ev = &e->xconfigure;
 
-	if(ev->window == win && (ev->width != ww || ev->height != wh)) {
+	if (ev->window == win && (ev->width != ww || ev->height != wh)) {
 		ww = ev->width;
 		wh = ev->height;
 		drw_resize(drw, ww, wh);
@@ -234,50 +236,52 @@ configurenotify(XEvent *e) {
 }
 
 void
-countrows() {
-	int i = 0;
+countrows(void)
+{
+	int i;
 
-	for(i = 0, rows = 1; i < numkeys; i++) {
-		if(keys[i].keysym == 0)
+	for (i = 0, rows = 1; i < numkeys; i++) {
+		if (keys[i].keysym == 0)
 			rows++;
 	}
 }
 
 int
-countkeys(Key * layer) {
-	int keys = 0;
-	int i;
+countkeys(Key *layer)
+{
+	int i, nkeys = 0;
 
-	for(i = 0; i < KEYS; i++) {
-		if (i > 0 && layer[i].keysym == 0 && layer[i-1].keysym == 0) {
-			keys--;
+	for (i = 0; i < KEYS; i++) {
+		if (i > 0 && layer[i].keysym == 0 && layer[i - 1].keysym == 0) {
+			nkeys--;
 			break;
 		}
-		keys++;
+		nkeys++;
 	}
 
-	return keys;
+	return nkeys;
 }
 
-
 void
-drawkeyboard(void) {
+drawkeyboard(void)
+{
 	int i;
 
-	for(i = 0; i < numkeys; i++) {
-		if(keys[i].keysym != 0)
+	for (i = 0; i < numkeys; i++) {
+		if (keys[i].keysym != 0)
 			drawkey(&keys[i]);
 	}
 }
 
 void
-drawkey(Key *k) {
+drawkey(Key *k)
+{
 	int x, y, w, h;
 	const char *l;
 
-	if(k->pressed)
+	if (k->pressed)
 		drw_setscheme(drw, scheme[SchemePress]);
-	else if(k->highlighted)
+	else if (k->highlighted)
 		drw_setscheme(drw, scheme[SchemeHighlight]);
 	else
 		drw_setscheme(drw, scheme[SchemeNorm]);
@@ -290,7 +294,7 @@ drawkey(Key *k) {
 		} else {
 			l = "≇";
 		}
-	} else if(k->label) {
+	} else if (k->label) {
 		l = k->label;
 	} else {
 		l = XKeysymToString(k->keysym);
@@ -304,10 +308,11 @@ drawkey(Key *k) {
 }
 
 void
-expose(XEvent *e) {
+expose(XEvent *e)
+{
 	XExposeEvent *ev = &e->xexpose;
 
-	if(ev->count == 0 && (ev->window == win))
+	if (ev->count == 0 && (ev->window == win))
 		drawkeyboard();
 }
 
@@ -315,8 +320,8 @@ Key *
 findkey(int x, int y) {
 	int i;
 
-	for(i = 0; i < numkeys; i++) {
-		if(keys[i].keysym && x > keys[i].x &&
+	for (i = 0; i < numkeys; i++) {
+		if (keys[i].keysym && x > keys[i].x &&
 				x < keys[i].x + keys[i].w &&
 				y > keys[i].y && y < keys[i].y + keys[i].h) {
 			return &keys[i];
@@ -325,15 +330,16 @@ findkey(int x, int y) {
 	return NULL;
 }
 
-
 int
-hasoverlay(KeySym keysym) {
+hasoverlay(KeySym keysym)
+{
 	int begin, i;
+
 	begin = 0;
-	for(i = 0; i < OVERLAYS; i++) {
-		if(overlay[i].keysym == XK_Cancel) {
+	for (i = 0; i < OVERLAYS; i++) {
+		if (overlay[i].keysym == XK_Cancel) {
 			begin = i+1;
-		} else if(overlay[i].keysym == keysym) {
+		} else if (overlay[i].keysym == keysym) {
 			return begin+1;
 		}
 	}
@@ -341,23 +347,28 @@ hasoverlay(KeySym keysym) {
 }
 
 void
-leavenotify(XEvent *e) {
+leavenotify(XEvent *e)
+{
 	if (currentoverlay != -1) {
 		hideoverlay();
 	}
 	unpress(NULL, 0);
 }
 
-void record_press_begin(KeySym ks) {
+void
+record_press_begin(KeySym ks)
+{
 	/* record the begin of the press, don't simulate the actual keypress yet */
 	gettimeofday(&pressbegin, NULL);
 	ispressingkeysym = ks;
 }
 
 void
-press(Key *k, KeySym mod) {
+press(Key *k, KeySym mod)
+{
 	int i;
 	int overlayidx = -1;
+
 	k->pressed = !k->pressed;
 
 	if (debug) printdbg("Begin press: %ld\n", k->keysym);
@@ -365,7 +376,7 @@ press(Key *k, KeySym mod) {
 	pressbegin.tv_usec = 0;
 	ispressingkeysym = 0;
 
-	if(!IsModifierKey(k->keysym)) {
+	if (!IsModifierKey(k->keysym)) {
 		if (enableoverlays && currentoverlay == -1)
 			overlayidx = hasoverlay(k->keysym);
 		if (enableoverlays && overlayidx != -1) {
@@ -375,19 +386,19 @@ press(Key *k, KeySym mod) {
 			}
 		} else {
 			if (debug) printdbg("Simulating press: %ld\n", k->keysym);
-			for(i = 0; i < numkeys; i++) {
-				if(keys[i].pressed && IsModifierKey(keys[i].keysym)) {
+			for (i = 0; i < numkeys; i++) {
+				if (keys[i].pressed && IsModifierKey(keys[i].keysym)) {
 					simulate_keypress(keys[i].keysym);
 				}
 			}
 			pressedmod = mod;
-			if(pressedmod) {
+			if (pressedmod) {
 				simulate_keypress(mod);
 			}
 			simulate_keypress(k->keysym);
 
-			for(i = 0; i < numkeys; i++) {
-				if(keys[i].pressed && IsModifierKey(keys[i].keysym)) {
+			for (i = 0; i < numkeys; i++) {
+				if (keys[i].pressed && IsModifierKey(keys[i].keysym)) {
 					simulate_keyrelease(keys[i].keysym);
 				}
 			}
@@ -396,18 +407,18 @@ press(Key *k, KeySym mod) {
 	drawkey(k);
 }
 
-
-
-
-
-int tmp_remap(KeySym keysym) {
+int
+tmp_remap(KeySym keysym)
+{
 	XChangeKeyboardMapping(dpy, tmp_keycode, 1, &keysym, 1);
 	XSync(dpy, False);
+
 	return tmp_keycode;
 }
 
 void
-simulate_keypress(KeySym keysym) {
+simulate_keypress(KeySym keysym)
+{
 	KeyCode code = XKeysymToKeycode(dpy, keysym);
 	if (code == 0)
 		code = tmp_remap(keysym);
@@ -415,25 +426,32 @@ simulate_keypress(KeySym keysym) {
 }
 
 void
-simulate_keyrelease(KeySym keysym) {
+simulate_keyrelease(KeySym keysym)
+{
 	KeyCode code = XKeysymToKeycode(dpy, keysym);
 	if (code == 0)
 		code = tmp_remap(keysym);
 	XTestFakeKeyEvent(dpy, code, False, 0);
 }
 
-
-double get_press_duration() {
+double
+get_press_duration(void)
+{
 	struct timeval now;
+
 	gettimeofday(&now, NULL);
-	return (double) ((now.tv_sec * 1000000L + now.tv_usec) - (pressbegin.tv_sec * 1000000L + pressbegin.tv_usec)) / (double) 1000000L;
+
+	return (double) ((now.tv_sec * 1000000L + now.tv_usec) -
+	       (pressbegin.tv_sec * 1000000L + pressbegin.tv_usec)) /
+	       (double) 1000000L;
 }
 
 void
-unpress(Key *k, KeySym mod) {
+unpress(Key *k, KeySym mod)
+{
 	int i;
 
-	if(k != NULL) {
+	if (k != NULL) {
 		switch(k->keysym) {
 		case XK_Cancel:
 			cyclelayer();
@@ -451,19 +469,18 @@ unpress(Key *k, KeySym mod) {
 		}
 	}
 
-
 	if ((pressbegin.tv_sec || pressbegin.tv_usec) && enableoverlays && k && k->keysym == ispressingkeysym) {
 		if (currentoverlay == -1) {
 			if (get_press_duration() < overlay_delay) {
 				if (debug) printdbg("Delayed simulation of press after release: %ld\n", k->keysym);
 				/* simulate the press event, as we postponed it earlier in press() */
-				for(i = 0; i < numkeys; i++) {
-					if(keys[i].pressed && IsModifierKey(keys[i].keysym)) {
+				for (i = 0; i < numkeys; i++) {
+					if (keys[i].pressed && IsModifierKey(keys[i].keysym)) {
 						simulate_keypress(keys[i].keysym);
 					}
 				}
 				pressedmod = mod;
-				if(pressedmod) {
+				if (pressedmod) {
 					simulate_keypress(mod);
 				}
 				simulate_keypress(k->keysym);
@@ -484,22 +501,22 @@ unpress(Key *k, KeySym mod) {
 	}
 
 
-	for(i = 0; i < numkeys; i++) {
-		if(keys[i].pressed && !IsModifierKey(keys[i].keysym)) {
+	for (i = 0; i < numkeys; i++) {
+		if (keys[i].pressed && !IsModifierKey(keys[i].keysym)) {
 			simulate_keyrelease(keys[i].keysym);
 			keys[i].pressed = 0;
 			drawkey(&keys[i]);
 			break;
 		}
 	}
-	if(i != numkeys) {
-		if(pressedmod) {
+	if (i != numkeys) {
+		if (pressedmod) {
 			simulate_keyrelease(mod);
 		}
 		pressedmod = 0;
 
-		for(i = 0; i < numkeys; i++) {
-			if(keys[i].pressed) {
+		for (i = 0; i < numkeys; i++) {
+			if (keys[i].pressed) {
 				simulate_keyrelease(keys[i].keysym);
 				keys[i].pressed = 0;
 				drawkey(&keys[i]);
@@ -517,7 +534,8 @@ unpress(Key *k, KeySym mod) {
 }
 
 void
-run(void) {
+run(void)
+{
 	XEvent ev;
 	int xfd;
 	fd_set fds;
@@ -525,23 +543,21 @@ run(void) {
 	double duration = 0.0;
 	int i, r;
 
-
 	xfd = ConnectionNumber(dpy);
-	tv.tv_usec = 0;
 	tv.tv_sec = 1;
-
+	tv.tv_usec = 0;
 
 	XFlush(dpy);
 
 	while (running) {
-		usleep(100000L);
+		usleep(100000L); /* 100ms */
 		FD_ZERO(&fds);
 		FD_SET(xfd, &fds);
 		r = select(xfd + 1, &fds, NULL, NULL, &tv);
 		if (r) {
 			while (XPending(dpy)) {
 				XNextEvent(dpy, &ev);
-				if(handler[ev.type]) {
+				if (handler[ev.type]) {
 					(handler[ev.type])(&ev); /* call handler */
 				}
 			}
@@ -577,7 +593,8 @@ run(void) {
 }
 
 void
-setup(void) {
+setup(void)
+{
 	XSetWindowAttributes wa;
 	XTextProperty str;
 	XSizeHints *sizeh = NULL;
@@ -586,43 +603,45 @@ setup(void) {
 	int i, j, sh, sw;
 	XWMHints *wmh;
 
-	#if XINERAMA
+#ifdef XINERAMA
 	XineramaScreenInfo *info = NULL;
-	#endif
+#endif
 
 	/* init screen */
 	screen = DefaultScreen(dpy);
 	root = RootWindow(dpy, screen);
-	#if XINERAMA
-	if(XineramaIsActive(dpy)) {
+#ifdef XINERAMA
+	if (XineramaIsActive(dpy)) {
 		info = XineramaQueryScreens(dpy, &i);
 		sw = info[0].width;
 		sh = info[0].height;
 		XFree(info);
 	} else
-	#endif
+#endif
 	{
 		sw = DisplayWidth(dpy, screen);
 		sh = DisplayHeight(dpy, screen);
 	}
 	drw = drw_create(dpy, screen, root, sw, sh);
 	if (!drw_fontset_create(drw, fonts, LENGTH(fonts)))
-		die("no fonts could be loaded.");
+		die("no fonts could be loaded");
 	drw_setscheme(drw, scheme[SchemeNorm]);
 
-	/* find an unused keycode to use as a temporary keycode (derived from source: https://stackoverflow.com/questions/44313966/c-xtest-emitting-key-presses-for-every-unicode-character) */
+	/* find an unused keycode to use as a temporary keycode (derived from source:
+	   https://stackoverflow.com/questions/44313966/c-xtest-emitting-key-presses-for-every-unicode-character) */
 	KeySym *keysyms = NULL;
 	int keysyms_per_keycode = 0;
 	int keycode_low, keycode_high;
 	Bool key_is_empty;
 	int symindex;
+
 	XDisplayKeycodes(dpy, &keycode_low, &keycode_high);
 	keysyms = XGetKeyboardMapping(dpy, keycode_low, keycode_high - keycode_low, &keysyms_per_keycode);
-	for(i = keycode_low; i <= keycode_high; i++) {
+	for (i = keycode_low; i <= keycode_high; i++) {
 		key_is_empty = True;
-		for(j = 0; j < keysyms_per_keycode; j++) {
+		for (j = 0; j < keysyms_per_keycode; j++) {
 			symindex = (i - keycode_low) * keysyms_per_keycode + j;
-			if(keysyms[symindex] != 0) {
+			if (keysyms[symindex] != 0) {
 				key_is_empty = False;
 			} else {
 				break;
@@ -639,7 +658,7 @@ setup(void) {
 		scheme[j] = drw_scm_create(drw, colors[j], 2);
 
 	/* init atoms */
-	if(isdock) {
+	if (isdock) {
 		netatom[NetWMWindowType] = XInternAtom(dpy,
 				"_NET_WM_WINDOW_TYPE", False);
 		atype = XInternAtom(dpy, "_NET_WM_WINDOW_TYPE_DOCK", False);
@@ -647,21 +666,21 @@ setup(void) {
 
 	/* init appearance */
 	countrows();
-	if(!ww)
+	if (!ww)
 		ww = sw;
-	if(!wh)
+	if (!wh)
 		wh = sh * rows / heightfactor;
 
-	if(!wx)
+	if (!wx)
 		wx = 0;
-	if(wx < 0)
+	if (wx < 0)
 		wx = sw + wx - ww;
-	if(!wy)
+	if (!wy)
 		wy = sh - wh;
-	if(wy < 0)
+	if (wy < 0)
 		wy = sh + wy - wh;
 
-	for(i = 0; i < numkeys; i++)
+	for (i = 0; i < numkeys; i++)
 		keys[i].pressed = 0;
 
 	wa.override_redirect = !wmborder;
@@ -678,7 +697,7 @@ setup(void) {
 	wmh = XAllocWMHints();
 	wmh->input = False;
 	wmh->flags = InputHint;
-	if(!isdock) {
+	if (!isdock) {
 		sizeh = XAllocSizeHints();
 		sizeh->flags = PMaxSize | PMinSize;
 		sizeh->min_width = sizeh->max_width = ww;
@@ -696,10 +715,10 @@ setup(void) {
 	XFree(ch);
 	XFree(wmh);
 	XFree(str.value);
-	if(sizeh != NULL)
+	if (sizeh != NULL)
 		XFree(sizeh);
 
-	if(isdock) {
+	if (isdock) {
 		XChangeProperty(dpy, win, netatom[NetWMWindowType], XA_ATOM,
 				32, PropModeReplace,
 				(unsigned char *)&atype, 1);
@@ -711,31 +730,32 @@ setup(void) {
 	drawkeyboard();
 }
 
-
 void
-updatekeys() {
+updatekeys(void)
+{
 	int i, j;
 	int x = 0, y = 0, h, base, r = rows;
 
 	h = (wh - 1) / rows;
-	for(i = 0; i < numkeys; i++, r--) {
-		for(j = i, base = 0; j < numkeys && keys[j].keysym != 0; j++)
+	for (i = 0; i < numkeys; i++, r--) {
+		for (j = i, base = 0; j < numkeys && keys[j].keysym != 0; j++)
 			base += keys[j].width;
-		for(x = 0; i < numkeys && keys[i].keysym != 0; i++) {
+		for (x = 0; i < numkeys && keys[i].keysym != 0; i++) {
 			keys[i].x = x;
 			keys[i].y = y;
 			keys[i].w = keys[i].width * (ww - 1) / base;
 			keys[i].h = r == 1 ? wh - y - 1 : h;
 			x += keys[i].w;
 		}
-		if(base != 0)
+		if (base != 0)
 			keys[i - 1].w = ww - 1 - keys[i - 1].x;
 		y += h;
 	}
 }
 
 void
-usage(char *argv0) {
+usage(char *argv0)
+{
 	fprintf(stderr, "usage: %s [-hdvDO] [-g geometry] [-fn font] [-l layers] [-s initial_layer]\n", argv0);
 	fprintf(stderr, "Options:\n");
 	fprintf(stderr, "  -d         - Set Dock Window Type\n");
@@ -748,13 +768,16 @@ usage(char *argv0) {
 	exit(1);
 }
 
-void setlayer() {
+void
+setlayer(void)
+{
 	numkeys = countkeys(layers[currentlayer]);
 	memcpy(&keys, layers[currentlayer], sizeof(Key) * numkeys);
 }
 
 void
-cyclelayer() {
+cyclelayer(void)
+{
 	currentlayer++;
 	if (currentlayer >= numlayers)
 		currentlayer = 0;
@@ -765,7 +788,8 @@ cyclelayer() {
 }
 
 void
-togglelayer() {
+togglelayer(void)
+{
 	if (currentlayer > 0) {
 		currentlayer = 0;
 	} else if (numlayers > 1) {
@@ -777,14 +801,15 @@ togglelayer() {
 	drawkeyboard();
 }
 
-
 void
-showoverlay(int idx) {
+showoverlay(int idx)
+{
 	if (debug) printdbg("Showing overlay %d\n", idx);
 	int i,j;
+
 	/* unpress existing key (visually only) */
-	for(i = 0; i < numkeys; i++) {
-		if(keys[i].pressed && !IsModifierKey(keys[i].keysym)) {
+	for (i = 0; i < numkeys; i++) {
+		if (keys[i].pressed && !IsModifierKey(keys[i].keysym)) {
 			keys[i].pressed = 0;
 			drawkey(&keys[i]);
 			break;
@@ -808,7 +833,8 @@ showoverlay(int idx) {
 }
 
 void
-hideoverlay() {
+hideoverlay(void)
+{
 	if (debug) printdbg("Hiding overlay %d\n", currentoverlay);
 	currentoverlay = -1;
 	overlaykeysym = 0;
@@ -816,19 +842,20 @@ hideoverlay() {
 	cyclelayer();
 }
 
-
 void
-sigterm(int sig)
+sigterm(int signo)
 {
 	running = False;
 	sigtermd = True;
 	if (debug) printdbg("Sigterm received\n");
 }
 
-
 void
-init_layers(char * layer_names_list, const char * initial_layer_name) {
-	int j;
+init_layers(char *layer_names_list, const char *initial_layer_name)
+{
+	char *s;
+	int j, found;
+
 	if (layer_names_list == NULL) {
 		numlayers = LAYERS;
 		memcpy(&layers, &available_layers, sizeof(available_layers));
@@ -841,11 +868,11 @@ init_layers(char * layer_names_list, const char * initial_layer_name) {
 			}
 		}
 	} else {
-		char * s;
 		s = strtok(layer_names_list, ",");
 		while (s != NULL) {
-			if (numlayers+1 > LAYERS) die("too many layers specified");
-			int found = 0;
+			if (numlayers+1 > LAYERS)
+				die("too many layers specified");
+			found = 0;
 			for (j = 0; j < LAYERS; j++) {
 				if (strcmp(layer_names[j], s) == 0) {
 					fprintf(stderr, "Adding layer %s\n", s);
@@ -869,87 +896,85 @@ init_layers(char * layer_names_list, const char * initial_layer_name) {
 }
 
 void
-printdbg(const char * fmt, ...) {
-	va_list args;
-	va_start(args, fmt);
-	vfprintf(stderr, fmt, args);
-	va_end(args);
+printdbg(const char *fmt, ...)
+{
+	va_list ap;
+	va_start(ap, fmt);
+	vfprintf(stderr, fmt, ap);
+	va_end(ap);
 	fflush(stderr);
 }
 
 int
-main(int argc, char *argv[]) {
+main(int argc, char *argv[])
+{
+	char *initial_layer_name = NULL;
+	char *layer_names_list = NULL;
+	char *tmp;
 	int i, xr, yr, bitm;
 	unsigned int wr, hr;
-	char * initial_layer_name = NULL;
-	char * layer_names_list = NULL;
 
 	signal(SIGTERM, sigterm);
 
-	/* parse environment variables */
 	if (OVERLAYS <= 1) {
 		enableoverlays = 0;
 	} else {
-		const char* enableoverlays_env = getenv("SVKBD_ENABLEOVERLAYS");
-		if (enableoverlays_env != NULL) enableoverlays = atoi(enableoverlays_env);
+		if ((tmp = getenv("SVKBD_ENABLEOVERLAYS")))
+			enableoverlays = atoi(tmp);
 	}
-	char *layers_env = getenv("SVKBD_LAYERS");
-	if (layers_env != NULL) {
-		if (!(layer_names_list = strdup(layers_env))) {
-			die("memory allocation error\n");
-		}
+	if ((tmp = getenv("SVKBD_LAYERS"))) {
+		if (!(layer_names_list = strdup(tmp)))
+			die("memory allocation error");
 	}
-	const char* heightfactor_s = getenv("SVKBD_HEIGHTFACTOR");
-	if (heightfactor_s != NULL)
-		heightfactor = atoi(heightfactor_s);
+
+	if ((tmp = getenv("SVKBD_HEIGHTFACTOR")))
+		heightfactor = atoi(tmp);
 
 	/* parse command line arguments */
 	for (i = 1; argv[i]; i++) {
-		if(!strcmp(argv[i], "-v")) {
-			die("svkbd-"VERSION", © 2006-2020 svkbd engineers,"
-				       " see LICENSE for details\n");
-		} else if(!strcmp(argv[i], "-d")) {
+		if (!strcmp(argv[i], "-v")) {
+			die("svkbd-"VERSION);
+		} else if (!strcmp(argv[i], "-d")) {
 			isdock = True;
 			continue;
-		} else if(!strncmp(argv[i], "-g", 2)) {
-			if(i >= argc - 1)
+		} else if (!strncmp(argv[i], "-g", 2)) {
+			if (i >= argc - 1)
 				continue;
 
-			bitm = XParseGeometry(argv[i+1], &xr, &yr, &wr, &hr);
-			if(bitm & XValue)
+			bitm = XParseGeometry(argv[i + 1], &xr, &yr, &wr, &hr);
+			if (bitm & XValue)
 				wx = xr;
-			if(bitm & YValue)
+			if (bitm & YValue)
 				wy = yr;
-			if(bitm & WidthValue)
+			if (bitm & WidthValue)
 				ww = (int)wr;
-			if(bitm & HeightValue)
+			if (bitm & HeightValue)
 				wh = (int)hr;
-			if(bitm & XNegative && wx == 0)
+			if (bitm & XNegative && wx == 0)
 				wx = -1;
-			if(bitm & YNegative && wy == 0)
+			if (bitm & YNegative && wy == 0)
 				wy = -1;
 			i++;
 		} else if (!strcmp(argv[i], "-fn")) { /* font or font set */
 			fonts[0] = argv[++i];
-		} else if(!strcmp(argv[i], "-D")) {
+		} else if (!strcmp(argv[i], "-D")) {
 			debug = 1;
-		} else if(!strcmp(argv[i], "-h")) {
+		} else if (!strcmp(argv[i], "-h")) {
 			usage(argv[0]);
-		} else if(!strcmp(argv[i], "-O")) {
+		} else if (!strcmp(argv[i], "-O")) {
 			enableoverlays = 0;
-		} else if(!strcmp(argv[i], "-l")) {
-			if(i >= argc - 1)
+		} else if (!strcmp(argv[i], "-l")) {
+			if (i >= argc - 1)
 				continue;
 			free(layer_names_list);
-			if (!(layer_names_list = strdup(argv[++i]))) {
-				die("memory allocation error\n");
-			}
-		} else if(!strcmp(argv[i], "-s")) {
-			if(i >= argc - 1)
+			if (!(layer_names_list = strdup(argv[++i])))
+				die("memory allocation error");
+		} else if (!strcmp(argv[i], "-s")) {
+			if (i >= argc - 1)
 				continue;
 			initial_layer_name = argv[++i];
-		} else if(!strcmp(argv[i], "-H")) {
-			if(i >= argc - 1)
+		} else if (!strcmp(argv[i], "-H")) {
+			if (i >= argc - 1)
 				continue;
 			heightfactor = atoi(argv[++i]);
 		} else {
@@ -958,18 +983,20 @@ main(int argc, char *argv[]) {
 		}
 	}
 
-	if (heightfactor <= 0) die("height factor must be a positive integer\n");
+	if (heightfactor <= 0)
+		die("height factor must be a positive integer");
 
 	init_layers(layer_names_list, initial_layer_name);
 
-	if(!setlocale(LC_CTYPE, "") || !XSupportsLocale())
-		fprintf(stderr, "warning: no locale support\n");
-	if(!(dpy = XOpenDisplay(0)))
-		die("svkbd: cannot open display\n");
+	if (!setlocale(LC_CTYPE, "") || !XSupportsLocale())
+		fprintf(stderr, "warning: no locale support");
+	if (!(dpy = XOpenDisplay(0)))
+		die("cannot open display");
 	setup();
 	run();
 	cleanup();
 	XCloseDisplay(dpy);
 	free(layer_names_list);
+
 	return 0;
 }
