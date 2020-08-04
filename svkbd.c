@@ -886,7 +886,6 @@ main(int argc, char *argv[]) {
 
 	signal(SIGTERM, sigterm);
 
-
 	/* parse environment variables */
 	if (OVERLAYS <= 1) {
 		enableoverlays = 0;
@@ -894,9 +893,9 @@ main(int argc, char *argv[]) {
 		const char* enableoverlays_env = getenv("SVKBD_ENABLEOVERLAYS");
 		if (enableoverlays_env != NULL) enableoverlays = atoi(enableoverlays_env);
 	}
-	const char* layers_env = getenv("SVKBD_LAYERS");
+	char *layers_env = getenv("SVKBD_LAYERS");
 	if (layers_env != NULL) {
-		if (!strdup(layer_names_list, layers_env)) {
+		if (!(layer_names_list = strdup(layers_env))) {
 			die("memory allocation error\n");
 		}
 	}
@@ -942,7 +941,7 @@ main(int argc, char *argv[]) {
 			if(i >= argc - 1)
 				continue;
 			free(layer_names_list);
-			if (!strdup(layer_names_list, argv[++i])) {
+			if (!(layer_names_list = strdup(argv[++i]))) {
 				die("memory allocation error\n");
 			}
 		} else if(!strcmp(argv[i], "-s")) {
