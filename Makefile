@@ -38,7 +38,7 @@ clean:
 dist:
 	rm -rf "${NAME}-${VERSION}"
 	mkdir -p "${NAME}-${VERSION}"
-	cp LICENSE Makefile README config.def.h config.mk ${MAN1} \
+	cp LICENSE Makefile README.md config.def.h config.mk ${MAN1} \
 		${SRC} ${NAME}-${VERSION}
 	for i in layout.*.h; \
 	do \
