@@ -389,8 +389,9 @@ drw_map(Drw *drw, Window win, int x, int y, unsigned int w, unsigned int h)
 }
 
 void
-drw_sync(Drw *drw) {
-    XSync(drw->dpy, False);
+drw_sync(Drw *drw)
+{
+	XSync(drw->dpy, False);
 }
 
 unsigned int
