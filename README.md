@@ -32,7 +32,7 @@ The following layouts are available:
         * a basic qwerty layer
         * a layer for numeric input, arrows, and punctuation
         * a layer for function keys, media keys, and arrows
-        * a cyrillic layer (ЙЦУКЕН)
+        * a cyrillic layer (ЙЦУКЕН based); the э key is moved to an overlay on е
         * a dialer/numeric layer
     * ``mobile-plain`` - This is a plain layout with only a qwerty layer and numeric/punctuation layer. It was
         originally made for [sxmo](https://sr.ht/~mil/Sxmo/).

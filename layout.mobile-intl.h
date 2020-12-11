@@ -202,10 +202,7 @@ static Key overlay[OVERLAYS] = {
         { 0, XK_Cyrillic_ie }, //New overlay
         //---
         { "ё", XK_Cyrillic_io },
-        { 0, XK_Cancel }, /* XK_Cancel signifies  overlay boundary */
-        //---
-        { 0, XK_Cyrillic_e }, //New overlay
-        //---
+        { "э", XK_Cyrillic_e },
         { "Є", XK_Ukrainian_ie },
         { 0, XK_Cancel }, /* XK_Cancel signifies  overlay boundary */
         //---
@@ -414,7 +411,7 @@ static Key keys_functions[KEYS] = {
 
 
 static Key keys_ru[KEYS] = {
-        { "и", XK_Cyrillic_shorti, 1 },
+        { "й", XK_Cyrillic_shorti, 1 },
         { "ц", XK_Cyrillic_tse, 1 },
         { "у", XK_Cyrillic_u, 1 },
         { "к", XK_Cyrillic_ka, 1 },
@@ -433,11 +430,11 @@ static Key keys_ru[KEYS] = {
         { "в", XK_Cyrillic_ve, 1 },
         { "а", XK_Cyrillic_a, 1 },
         { "п", XK_Cyrillic_pe, 1 },
+        { "р", XK_Cyrillic_er, 1 },
         { "о", XK_Cyrillic_o, 1 },
         { "л", XK_Cyrillic_el, 1 },
         { "д", XK_Cyrillic_de, 1 },
         { "ж", XK_Cyrillic_zhe, 1 },
-        { "э", XK_Cyrillic_e, 1 },
         { "ю", XK_Cyrillic_yu, 1 },
 
         { 0 }, /* New row */
