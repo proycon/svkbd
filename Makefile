@@ -3,7 +3,7 @@
 .POSIX:
 
 NAME = svkbd
-VERSION = 0.2.1
+VERSION = 0.2.2
 
 include config.mk
 
