@@ -835,7 +835,7 @@ hideoverlay(void)
 	if (debug) printdbg("Hiding overlay, overlay was #%d\n", currentoverlay);
 	currentoverlay = -1;
 	overlaykeysym = 0;
-	currentlayer = -1;
+	currentlayer--;
 	cyclelayer();
 }
 
