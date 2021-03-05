@@ -1,9 +1,9 @@
 static const Bool wmborder = True;
-static int fontsize = 20;
+static int fontsize = 22;
 static double overlay_delay = 1.0;
-static int heightfactor = 16; //one row of keys takes up 1/x of the screen height
+static int heightfactor = 14; //one row of keys takes up 1/x of the screen height
 static const char *fonts[] = {
-	"DejaVu Sans:bold:size=20"
+	"DejaVu Sans:bold:size=22"
 };
 static const char *colors[SchemeLast][2] = {
 	/*     fg         bg       */

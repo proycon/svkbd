@@ -238,8 +238,13 @@ countrows(void)
 	int i;
 
 	for (i = 0, rows = 1; i < numkeys; i++) {
-		if (keys[i].keysym == 0)
+		if (keys[i].keysym == 0) {
 			rows++;
+			if ((i > 0) && (keys[i-1].keysym == 0)) {
+				rows--;
+				break;
+			}
+		}
 	}
 }
 
@@ -770,6 +775,7 @@ setlayer(void)
 {
 	numkeys = countkeys(layers[currentlayer]);
 	memcpy(&keys, layers[currentlayer], sizeof(Key) * numkeys);
+	countrows();
 }
 
 void
