@@ -100,6 +100,7 @@ static struct timeval pressbegin;
 static int currentlayer = 0;
 static int enableoverlays = 1;
 static int currentoverlay = -1; /* -1 = no overlay */
+static int pressonrelease = 1;
 static KeySym overlaykeysym = 0; /* keysym for which the overlay is presented */
 static int releaseprotect = 0; /* set to 1 after overlay is shown, protecting against immediate release */
 static int tmp_keycode = 1;
@@ -129,6 +130,8 @@ motionnotify(XEvent *e)
 {
 	XPointerMovedEvent *ev = &e->xmotion;
 	int i;
+	int lostfocus = -1;
+	int gainedfocus = -1;
 
 	for (i = 0; i < numkeys; i++) {
 		if (keys[i].keysym && ev->x > keys[i].x
@@ -137,6 +140,7 @@ motionnotify(XEvent *e)
 				&& ev->y < keys[i].y + keys[i].h) {
 			if (keys[i].highlighted != True) {
 				if (ispressing) {
+					gainedfocus = i;
 					keys[i].pressed = True;
 				} else {
 					keys[i].highlighted = True;
@@ -147,14 +151,21 @@ motionnotify(XEvent *e)
 		}
 
 		if (!IsModifierKey(keys[i].keysym) && keys[i].pressed == True) {
+			if (debug) printdbg("Pressed key lost focus: %ld\n", keys[i].keysym);
+			lostfocus = i;
+			ispressingkeysym = 0;
 			unpress(&keys[i], 0);
-
 			drawkey(&keys[i]);
 		}
 		if (keys[i].highlighted == True) {
 			keys[i].highlighted = False;
 			drawkey(&keys[i]);
 		}
+	}
+
+	if ((lostfocus != -1) && (gainedfocus != -1) && (lostfocus != gainedfocus)) {
+		if (debug) printdbg("Clicking new key that gained focus\n");
+		press(&keys[gainedfocus], keys[gainedfocus].keysym);
 	}
 }
 
@@ -356,6 +367,7 @@ leavenotify(XEvent *e)
 {
 	if (currentoverlay != -1)
 		hideoverlay();
+	ispressingkeysym = 0;
 	unpress(NULL, 0);
 }
 
@@ -375,7 +387,7 @@ press(Key *k, KeySym mod)
 
 	k->pressed = !k->pressed;
 
-	if (debug) printdbg("Begin press: %ld\n", k->keysym);
+	if (debug) printdbg("Begin click: %ld\n", k->keysym);
 	pressbegin.tv_sec = 0;
 	pressbegin.tv_usec = 0;
 	ispressingkeysym = 0;
@@ -383,11 +395,11 @@ press(Key *k, KeySym mod)
 	if (!IsModifierKey(k->keysym)) {
 		if (enableoverlays && currentoverlay == -1)
 			overlayidx = hasoverlay(k->keysym);
-		if (enableoverlays && overlayidx != -1) {
-			if (!pressbegin.tv_sec && !pressbegin.tv_usec) {
+		if ((pressonrelease) || (enableoverlays && overlayidx != -1)) {
+			//if (!pressbegin.tv_sec && !pressbegin.tv_usec) {
 				/*record the begin of the press, don't simulate the actual keypress yet */
 				record_press_begin(k->keysym);
-			}
+			//}
 		} else {
 			if (debug) printdbg("Simulating press: %ld\n", k->keysym);
 			for (i = 0; i < numkeys; i++) {
@@ -474,9 +486,7 @@ unpress(Key *k, KeySym mod)
 		}
 	}
 
-	if ((pressbegin.tv_sec || pressbegin.tv_usec) && enableoverlays && k && k->keysym == ispressingkeysym) {
-		if (currentoverlay == -1) {
-			if (get_press_duration() < overlay_delay) {
+	if ((pressbegin.tv_sec || pressbegin.tv_usec) && (enableoverlays || pressonrelease) && k && k->keysym == ispressingkeysym) {
 				if (debug) printdbg("Delayed simulation of press after release: %ld\n", k->keysym);
 				/* simulate the press event, as we postponed it earlier in press() */
 				for (i = 0; i < numkeys; i++) {
@@ -491,10 +501,6 @@ unpress(Key *k, KeySym mod)
 				simulate_keypress(k->keysym);
 				pressbegin.tv_sec = 0;
 				pressbegin.tv_usec = 0;
-			} else {
-				return;
-			}
-		}
 	}
 
 	if (debug) {
@@ -546,11 +552,12 @@ run(void)
 	fd_set fds;
 	struct timeval tv;
 	double duration = 0.0;
+	int overlayidx = -1;
 	int i, r;
 
 	xfd = ConnectionNumber(dpy);
-	tv.tv_sec = 1;
-	tv.tv_usec = 0;
+	tv.tv_sec = 0;
+	tv.tv_usec = scan_rate;
 
 	XFlush(dpy);
 
@@ -571,12 +578,19 @@ run(void)
 			if (ispressing && ispressingkeysym) {
 				duration = get_press_duration();
 				if (debug == 2) printdbg("%f\n", duration);
-				if (get_press_duration() >= overlay_delay) {
-					if (debug) printdbg("press duration %f\n", duration);
-					showoverlay(hasoverlay(ispressingkeysym));
+				overlayidx = hasoverlay(ispressingkeysym);
+				duration = get_press_duration();
+				if ((overlayidx != -1) && (duration >= overlay_delay)) {
+					if (debug) printdbg("press duration %f, activating overlay\n", duration);
+					showoverlay(overlayidx);
 					pressbegin.tv_sec = 0;
 					pressbegin.tv_usec = 0;
 					ispressingkeysym = 0;
+				} else if ((overlayidx == -1) && (duration >= repeat_delay)) {
+					if (debug) printdbg("press duration %f, activating repeat\n", duration);
+					simulate_keyrelease(ispressingkeysym);
+					simulate_keypress(ispressingkeysym);
+					XSync(dpy, False);
 				}
 			}
 		}
