@@ -33,7 +33,7 @@
 #define STRINGTOKEYSYM(X) (XStringToKeySym(X))
 
 /* enums */
-enum { SchemeNorm, SchemePress, SchemeHighlight, SchemeLast };
+enum { SchemeNorm, SchemeNormABC, SchemePress, SchemeHighlight, SchemeLast };
 enum { NetWMWindowType, NetLast };
 
 /* typedefs */
@@ -285,10 +285,13 @@ drawkey(Key *k)
 		drw_setscheme(drw, scheme[SchemePress]);
 	else if (k->highlighted)
 		drw_setscheme(drw, scheme[SchemeHighlight]);
+	else if ((k->keysym == XK_Return) ||
+			((k->keysym >= XK_a) && (k->keysym <= XK_z)) ||
+			((k->keysym >= XK_Cyrillic_io) && (k->keysym <= XK_Cyrillic_hardsign)))
+		drw_setscheme(drw, scheme[SchemeNormABC]);
 	else
 		drw_setscheme(drw, scheme[SchemeNorm]);
 	drw_rect(drw, k->x, k->y, k->w, k->h, 1, 1);
-	drw_rect(drw, k->x, k->y, k->w, k->h, 0, 0);
 
 	if (k->keysym == XK_KP_Insert) {
 		if (enableoverlays) {
