@@ -924,8 +924,8 @@ showoverlay(int idx)
 		}
 		while (keys[j].keysym == 0)
 			j++;
-		if (overlay[i].width)
-			j += overlay[i].width;
+		if (overlay[i].width > 1)
+			j += overlay[i].width - 1;
 		keys[j].label = overlay[i].label;
 		keys[j].label2 = overlay[i].label2;
 		keys[j].keysym = overlay[i].keysym;
