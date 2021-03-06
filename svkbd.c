@@ -78,6 +78,7 @@ static void setlayer();
 static void togglelayer();
 static void unpress(Key *k, KeySym mod);
 static void updatekeys();
+static void printkey(Key *k, KeySym mod);
 
 /* variables */
 static int screen;
@@ -106,6 +107,8 @@ static KeySym overlaykeysym = 0; /* keysym for which the overlay is presented */
 static int releaseprotect = 0; /* set to 1 after overlay is shown, protecting against immediate release */
 static int tmp_keycode = 1;
 static int rows = 0, ww = 0, wh = 0, wx = 0, wy = 0;
+static int simulateoutput = 1; /* simulate key presses for X */
+static int printoutput = 0; /* print key pressed to stdout */
 static char *name = "svkbd";
 static int debug = 0;
 static int numlayers = 0;
@@ -415,6 +418,7 @@ press(Key *k, KeySym mod)
 				simulate_keypress(mod);
 			}
 			simulate_keypress(k->keysym);
+			if (printoutput) printkey(k, mod);
 
 			for (i = 0; i < numkeys; i++) {
 				if (keys[i].pressed && IsModifierKey(keys[i].keysym)) {
@@ -436,8 +440,23 @@ tmp_remap(KeySym keysym)
 }
 
 void
+printkey(Key *k, KeySym mod) {
+	if (k->keysym == XK_Cancel) return;
+	const char *l = 0;
+	if ((mod == XK_Shift_L) || (mod == XK_Shift_R) || (mod == XK_Shift_Lock)) {
+		KeySym upper = 0;
+		XConvertCase(k->keysym, NULL, &upper);
+		l = XKeysymToString(upper);
+	} else {
+		l = XKeysymToString(k->keysym);
+	}
+	if (l != 0) printf("%s",l);
+}
+
+void
 simulate_keypress(KeySym keysym)
 {
+	if  (!simulateoutput) return;
 	KeyCode code = XKeysymToKeycode(dpy, keysym);
 	if (code == 0)
 		code = tmp_remap(keysym);
@@ -447,6 +466,7 @@ simulate_keypress(KeySym keysym)
 void
 simulate_keyrelease(KeySym keysym)
 {
+	if  (!simulateoutput) return;
 	KeyCode code = XKeysymToKeycode(dpy, keysym);
 	if (code == 0)
 		code = tmp_remap(keysym);
@@ -502,6 +522,7 @@ unpress(Key *k, KeySym mod)
 					simulate_keypress(mod);
 				}
 				simulate_keypress(k->keysym);
+				if (printoutput) printkey(k, mod);
 				pressbegin.tv_sec = 0;
 				pressbegin.tv_usec = 0;
 	}
@@ -778,11 +799,14 @@ updatekeys(void)
 void
 usage(char *argv0)
 {
-	fprintf(stderr, "usage: %s [-hdvDO] [-g geometry] [-fn font] [-l layers] [-s initial_layer]\n", argv0);
+	fprintf(stderr, "usage: %s [-hdnovDOR] [-g geometry] [-fn font] [-l layers] [-s initial_layer]\n", argv0);
 	fprintf(stderr, "Options:\n");
 	fprintf(stderr, "  -d         - Set Dock Window Type\n");
 	fprintf(stderr, "  -D         - Enable debug\n");
 	fprintf(stderr, "  -O         - Disable overlays\n");
+	fprintf(stderr, "  -R         - Disable press-on-release\n");
+	fprintf(stderr, "  -n         - Do not simulate key presses for X\n");
+	fprintf(stderr, "  -o         - Print to standard output\n");
 	fprintf(stderr, "  -l         - Comma separated list of layers to enable\n");
 	fprintf(stderr, "  -s         - Layer to select on program start\n");
 	fprintf(stderr, "  -H [int]   - Height fraction, one key row takes 1/x of the screen height");
@@ -956,6 +980,9 @@ main(int argc, char *argv[])
 	if ((tmp = getenv("SVKBD_HEIGHTFACTOR")))
 		heightfactor = atoi(tmp);
 
+	if ((tmp = getenv("SVKBD_PRESSONRELEASE"))) /* defaults to 1 */
+		pressonrelease = atoi(tmp);
+
 	/* parse command line arguments */
 	for (i = 1; argv[i]; i++) {
 		if (!strcmp(argv[i], "-v")) {
@@ -989,6 +1016,12 @@ main(int argc, char *argv[])
 			usage(argv[0]);
 		} else if (!strcmp(argv[i], "-O")) {
 			enableoverlays = 0;
+		} else if (!strcmp(argv[i], "-o")) {
+			printoutput = 1;
+		} else if (!strcmp(argv[i], "-n")) {
+			simulateoutput = 0;
+		} else if (!strcmp(argv[i], "-R")) {
+			pressonrelease = 0;
 		} else if (!strcmp(argv[i], "-l")) {
 			if (i >= argc - 1)
 				continue;
@@ -1008,6 +1041,9 @@ main(int argc, char *argv[])
 			exit(2);
 		}
 	}
+
+	if (printoutput)
+		setbuf(stdout, NULL); //unbuffered output
 
 	if (heightfactor <= 0)
 		die("height factor must be a positive integer");
