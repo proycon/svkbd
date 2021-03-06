@@ -33,12 +33,13 @@
 #define STRINGTOKEYSYM(X) (XStringToKeySym(X))
 
 /* enums */
-enum { SchemeNorm, SchemeNormABC, SchemePress, SchemeHighlight, SchemeOverlay, SchemeLast };
+enum { SchemeNorm, SchemeNormABC, SchemeNormABCShift, SchemeNormShift, SchemePress, SchemePressShift, SchemeHighlight, SchemeHighlightShift, SchemeOverlay, SchemeOverlayShift, SchemeLast };
 enum { NetWMWindowType, NetLast };
 
 /* typedefs */
 typedef struct {
 	char *label;
+	char *label2;
 	KeySym keysym;
 	unsigned int width;
 	KeySym modifier;
@@ -303,20 +304,25 @@ void
 drawkey(Key *k, int idx)
 {
 	int x, y, w, h;
+	int x2, y2, w2, h2;
 	const char *l;
 
+	int use_scheme = SchemeNorm;
+
 	if (k->pressed)
-		drw_setscheme(drw, scheme[SchemePress]);
+		use_scheme = SchemePress;
 	else if (k->highlighted)
-		drw_setscheme(drw, scheme[SchemeHighlight]);
+		use_scheme = SchemeHighlight;
 	else if (idx < overlaykeycount)
-		drw_setscheme(drw, scheme[SchemeOverlay]);
+		use_scheme = SchemeOverlay;
 	else if ((k->keysym == XK_Return) ||
 			((k->keysym >= XK_a) && (k->keysym <= XK_z)) ||
 			((k->keysym >= XK_Cyrillic_io) && (k->keysym <= XK_Cyrillic_hardsign)))
-		drw_setscheme(drw, scheme[SchemeNormABC]);
+		use_scheme = SchemeNormABC;
 	else
-		drw_setscheme(drw, scheme[SchemeNorm]);
+		use_scheme = SchemeNorm;
+
+	drw_setscheme(drw, scheme[use_scheme]);
 	drw_rect(drw, k->x, k->y, k->w, k->h, 1, 1);
 
 	if (k->keysym == XK_KP_Insert) {
@@ -335,6 +341,24 @@ drawkey(Key *k, int idx)
 	w = TEXTW(l);
 	x = k->x + (k->w / 2) - (w / 2);
 	drw_text(drw, x, y, w, h, 0, l, 0);
+	if (k->label2) {
+		if (use_scheme == SchemeNorm)
+			use_scheme = SchemeNormShift;
+		else if (use_scheme == SchemeNormABC)
+			use_scheme = SchemeNormABCShift;
+		else if (use_scheme == SchemePress)
+			use_scheme = SchemePressShift;
+		else if (use_scheme == SchemeHighlight)
+			use_scheme = SchemeHighlightShift;
+		else if (use_scheme == SchemeOverlay)
+			use_scheme = SchemeOverlayShift;
+		drw_setscheme(drw, scheme[use_scheme]);
+		x += w;
+		y -= 15;
+		l = k->label2;
+		w = TEXTW(l);
+		drw_text(drw, x, y, w, h, 0, l, 0);
+	}
 	drw_map(drw, win, k->x, k->y, k->w, k->h);
 }
 
@@ -882,6 +906,7 @@ showoverlay(int idx)
 		if (overlay[i].width)
 			j += overlay[i].width;
 		keys[j].label = overlay[i].label;
+		keys[j].label2 = overlay[i].label2;
 		keys[j].keysym = overlay[i].keysym;
 		keys[j].modifier = overlay[i].modifier;
 	}

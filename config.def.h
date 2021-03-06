@@ -10,8 +10,14 @@ static const char *fonts[] = {
 static const char *colors[SchemeLast][2] = {
 	/*     fg         bg       */
 	[SchemeNorm] = { "#bbbbbb", "#132a33" },
+	[SchemeNormShift] = { "#008ac0", "#132a33" },
 	[SchemeNormABC] = { "#ffffff", "#14313d" },
-	[SchemePress] = { "#ffffff", "#000000" },
+	[SchemeNormABCShift] = { "#008ac0", "#14313d" },
+	[SchemePress] = { "#ffffff", "#259937" },
+	[SchemePressShift] = { "#00c001", "#259937" },
 	[SchemeHighlight] = { "#58a7c6", "#005577" },
+	[SchemeHighlightShift] = { "#008ac0", "#005577" },
 	[SchemeOverlay] = { "#ffffff", "#2b3313" },
+	[SchemeOverlayShift] = { "#008ac0", "#2b3313" },
 };
+
