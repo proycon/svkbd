@@ -41,6 +41,7 @@ typedef struct {
 	char *label;
 	KeySym keysym;
 	unsigned int width;
+	KeySym modifier;
 	int x, y, w, h;
 	Bool pressed;
 	Bool highlighted;
@@ -183,14 +184,20 @@ buttonpress(XEvent *e)
 
 	ispressing = True;
 
-	for (i = 0; i < LENGTH(buttonmods); i++) {
-		if (ev->button == buttonmods[i].button) {
-			mod = buttonmods[i].mod;
-			break;
+	if (!(k = findkey(ev->x, ev->y)))
+		return;
+
+	if (k->modifier)
+		mod = k->modifier;
+	else
+		for (i = 0; i < LENGTH(buttonmods); i++) {
+			if (ev->button == buttonmods[i].button) {
+				mod = buttonmods[i].mod;
+				break;
+			}
 		}
-	}
-	if ((k = findkey(ev->x, ev->y)))
-		press(k, mod);
+
+	press(k, mod);
 }
 
 void
@@ -212,8 +219,10 @@ buttonrelease(XEvent *e)
 
 	if (ev->x < 0 || ev->y < 0) {
 		unpress(NULL, mod);
-	} else {
-		if ((k = findkey(ev->x, ev->y)))
+	} else if ((k = findkey(ev->x, ev->y))) {
+		if (k->modifier)
+			unpress(k, k->modifier);
+		else
 			unpress(k, mod);
 	}
 }
@@ -872,6 +881,7 @@ showoverlay(int idx)
 			j++;
 		keys[j].label = overlay[i].label;
 		keys[j].keysym = overlay[i].keysym;
+		keys[j].modifier = overlay[i].modifier;
 	}
 	currentoverlay = idx;
 	overlaykeysym = ispressingkeysym;
