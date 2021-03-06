@@ -10,6 +10,7 @@
 #include <stdlib.h>
 #include <time.h>
 #include <unistd.h>
+#include <ctype.h>
 
 #include <X11/keysym.h>
 #include <X11/keysymdef.h>
@@ -171,7 +172,7 @@ motionnotify(XEvent *e)
 
 	if ((lostfocus != -1) && (gainedfocus != -1) && (lostfocus != gainedfocus)) {
 		if (debug) printdbg("Clicking new key that gained focus\n");
-		press(&keys[gainedfocus], keys[gainedfocus].keysym);
+		press(&keys[gainedfocus], 0);
 	}
 }
 
@@ -440,7 +441,7 @@ press(Key *k, KeySym mod)
 				record_press_begin(k->keysym);
 			//}
 		} else {
-			if (debug) printdbg("Simulating press: %ld\n", k->keysym);
+			if (debug) printdbg("Simulating press: %ld (mod %ld)\n", k->keysym, mod);
 			for (i = 0; i < numkeys; i++) {
 				if (keys[i].pressed && IsModifierKey(keys[i].keysym)) {
 					simulate_keypress(keys[i].keysym);
@@ -474,22 +475,43 @@ tmp_remap(KeySym keysym)
 
 void
 printkey(Key *k, KeySym mod) {
-	if (k->keysym == XK_Cancel) return;
-	const char *l = 0;
-	if ((mod == XK_Shift_L) || (mod == XK_Shift_R) || (mod == XK_Shift_Lock)) {
-		KeySym upper = 0;
-		XConvertCase(k->keysym, NULL, &upper);
-		l = XKeysymToString(upper);
-	} else {
-		l = XKeysymToString(k->keysym);
+	int shift = (mod == XK_Shift_L) || (mod == XK_Shift_R) || (mod == XK_Shift_Lock);
+	if (!shift) {
+		for (int i = 0; i < numkeys; i++) {
+			if ((keys[i].pressed) && ((keys[i].keysym == XK_Shift_L) || (keys[i].keysym == XK_Shift_R) || (keys[i].keysym == XK_Shift_Lock))) {
+				shift = True;
+				break;
+			}
+		}
 	}
-	if (l != 0) printf("%s",l);
+	if (debug) printdbg("Printing key %ld (shift=%d)\n", k->keysym, shift);
+	if (k->keysym == XK_Cancel) return;
+	KeySym * keysym = &(k->keysym);
+	XIM xim = XOpenIM(dpy, 0, 0, 0);
+	XIC xic = XCreateIC(xim, XNInputStyle, XIMPreeditNothing | XIMStatusNothing, NULL);
+
+	XKeyPressedEvent event;
+	event.type = KeyPress;
+	event.display = dpy;
+	event.state = ShiftMask ? shift : 0;
+	event.keycode = XKeysymToKeycode(dpy, *keysym);
+	if (event.keycode == 0)
+		event.keycode = tmp_remap(*keysym);
+
+	char buffer[32];
+	KeySym ignore;
+	Status return_status;
+	Xutf8LookupString(xic, &event, buffer, 32, &ignore, &return_status);
+
+	XDestroyIC(xic);
+	XCloseIM(xim);
+	printf("%s", buffer);
 }
 
 void
 simulate_keypress(KeySym keysym)
 {
-	if  (!simulateoutput) return;
+	if (!simulateoutput) return;
 	KeyCode code = XKeysymToKeycode(dpy, keysym);
 	if (code == 0)
 		code = tmp_remap(keysym);
@@ -499,7 +521,7 @@ simulate_keypress(KeySym keysym)
 void
 simulate_keyrelease(KeySym keysym)
 {
-	if  (!simulateoutput) return;
+	if (!simulateoutput) return;
 	KeyCode code = XKeysymToKeycode(dpy, keysym);
 	if (code == 0)
 		code = tmp_remap(keysym);
@@ -514,8 +536,8 @@ get_press_duration(void)
 	gettimeofday(&now, NULL);
 
 	return (double) ((now.tv_sec * 1000000L + now.tv_usec) -
-	       (pressbegin.tv_sec * 1000000L + pressbegin.tv_usec)) /
-	       (double) 1000000L;
+		   (pressbegin.tv_sec * 1000000L + pressbegin.tv_usec)) /
+		   (double) 1000000L;
 }
 
 void
@@ -654,11 +676,11 @@ run(void)
 		if (r == -1 || sigtermd) {
 			/* an error occurred or we received a signal */
 			/* E.g. Generally in scripts we want to call SIGTERM on svkbd in which case
-			        if the user is holding for example the enter key (to execute
-			        the kill or script that does the kill), that causes an issue
-			        since then X doesn't know the keyup is never coming.. (since
-			        process will be dead before finger lifts - in that case we
-			        just trigger out fake up presses for all keys */
+					if the user is holding for example the enter key (to execute
+					the kill or script that does the kill), that causes an issue
+					since then X doesn't know the keyup is never coming.. (since
+					process will be dead before finger lifts - in that case we
+					just trigger out fake up presses for all keys */
 			if (debug) printdbg("signal received, releasing all keys");
 			for (i = 0; i < numkeys; i++) {
 				XTestFakeKeyEvent(dpy, XKeysymToKeycode(dpy, keys[i].keysym), False, 0);
