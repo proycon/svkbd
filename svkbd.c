@@ -33,7 +33,7 @@
 #define STRINGTOKEYSYM(X) (XStringToKeySym(X))
 
 /* enums */
-enum { SchemeNorm, SchemeNormABC, SchemePress, SchemeHighlight, SchemeLast };
+enum { SchemeNorm, SchemeNormABC, SchemePress, SchemeHighlight, SchemeOverlay, SchemeLast };
 enum { NetWMWindowType, NetLast };
 
 /* typedefs */
@@ -61,7 +61,7 @@ static void configurenotify(XEvent *e);
 static void countrows();
 static int countkeys(Key *layer);
 static void drawkeyboard(void);
-static void drawkey(Key *k);
+static void drawkey(Key *k, int idx);
 static void expose(XEvent *e);
 static Key *findkey(int x, int y);
 static void leavenotify(XEvent *e);
@@ -100,6 +100,7 @@ static struct timeval pressbegin;
 static int currentlayer = 0;
 static int enableoverlays = 1;
 static int currentoverlay = -1; /* -1 = no overlay */
+static int overlaykeycount = 0; /* number of keys in the current overlay */
 static int pressonrelease = 1;
 static KeySym overlaykeysym = 0; /* keysym for which the overlay is presented */
 static int releaseprotect = 0; /* set to 1 after overlay is shown, protecting against immediate release */
@@ -145,7 +146,7 @@ motionnotify(XEvent *e)
 				} else {
 					keys[i].highlighted = True;
 				}
-				drawkey(&keys[i]);
+				drawkey(&keys[i], i);
 			}
 			continue;
 		}
@@ -155,11 +156,11 @@ motionnotify(XEvent *e)
 			lostfocus = i;
 			ispressingkeysym = 0;
 			unpress(&keys[i], 0);
-			drawkey(&keys[i]);
+			drawkey(&keys[i], i);
 		}
 		if (keys[i].highlighted == True) {
 			keys[i].highlighted = False;
-			drawkey(&keys[i]);
+			drawkey(&keys[i], i);
 		}
 	}
 
@@ -282,12 +283,12 @@ drawkeyboard(void)
 
 	for (i = 0; i < numkeys; i++) {
 		if (keys[i].keysym != 0)
-			drawkey(&keys[i]);
+			drawkey(&keys[i], i);
 	}
 }
 
 void
-drawkey(Key *k)
+drawkey(Key *k, int idx)
 {
 	int x, y, w, h;
 	const char *l;
@@ -296,6 +297,8 @@ drawkey(Key *k)
 		drw_setscheme(drw, scheme[SchemePress]);
 	else if (k->highlighted)
 		drw_setscheme(drw, scheme[SchemeHighlight]);
+	else if (idx < overlaykeycount)
+		drw_setscheme(drw, scheme[SchemeOverlay]);
 	else if ((k->keysym == XK_Return) ||
 			((k->keysym >= XK_a) && (k->keysym <= XK_z)) ||
 			((k->keysym >= XK_Cyrillic_io) && (k->keysym <= XK_Cyrillic_hardsign)))
@@ -420,7 +423,7 @@ press(Key *k, KeySym mod)
 			}
 		}
 	}
-	drawkey(k);
+	drawkey(k, 0);
 }
 
 int
@@ -516,7 +519,7 @@ unpress(Key *k, KeySym mod)
 		if (keys[i].pressed && !IsModifierKey(keys[i].keysym)) {
 			simulate_keyrelease(keys[i].keysym);
 			keys[i].pressed = 0;
-			drawkey(&keys[i]);
+			drawkey(&keys[i], i);
 			break;
 		}
 	}
@@ -530,7 +533,7 @@ unpress(Key *k, KeySym mod)
 			if (keys[i].pressed) {
 				simulate_keyrelease(keys[i].keysym);
 				keys[i].pressed = 0;
-				drawkey(&keys[i]);
+				drawkey(&keys[i], i);
 			}
 		}
 	}
@@ -831,14 +834,16 @@ showoverlay(int idx)
 	for (i = 0; i < numkeys; i++) {
 		if (keys[i].pressed && !IsModifierKey(keys[i].keysym)) {
 			keys[i].pressed = 0;
-			drawkey(&keys[i]);
+			drawkey(&keys[i], i);
 			break;
 		}
 	}
 
 	for (i = idx, j=0; i < OVERLAYS; i++, j++) {
-		if (overlay[i].keysym == XK_Cancel)
+		if (overlay[i].keysym == XK_Cancel) {
+			overlaykeycount = j;
 			break;
+		}
 		while (keys[j].keysym == 0)
 			j++;
 		keys[j].label = overlay[i].label;
@@ -857,6 +862,7 @@ hideoverlay(void)
 {
 	if (debug) printdbg("Hiding overlay, overlay was #%d\n", currentoverlay);
 	currentoverlay = -1;
+	overlaykeycount = 0;
 	overlaykeysym = 0;
 	currentlayer--;
 	cyclelayer();

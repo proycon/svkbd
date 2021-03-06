@@ -13,4 +13,5 @@ static const char *colors[SchemeLast][2] = {
 	[SchemeNormABC] = { "#ffffff", "#14313d" },
 	[SchemePress] = { "#ffffff", "#000000" },
 	[SchemeHighlight] = { "#58a7c6", "#005577" },
+	[SchemeOverlay] = { "#ffffff", "#2b3313" },
 };
