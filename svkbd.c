@@ -572,8 +572,7 @@ unpress(Key *k, KeySym mod)
 						simulate_keypress(keys[i].keysym);
 					}
 				}
-				pressedmod = mod;
-				if (pressedmod) {
+				if (mod) {
 					simulate_keypress(mod);
 				}
 				simulate_keypress(k->keysym);
@@ -600,10 +599,9 @@ unpress(Key *k, KeySym mod)
 		}
 	}
 	if (i != numkeys) {
-		if (pressedmod) {
+		if (mod) {
 			simulate_keyrelease(mod);
 		}
-		pressedmod = 0;
 
 		for (i = 0; i < numkeys; i++) {
 			if (keys[i].pressed) {
@@ -614,7 +612,7 @@ unpress(Key *k, KeySym mod)
 		}
 	}
 
-	if (enableoverlays && currentoverlay != -1) {
+	if (enableoverlays && currentoverlay != -1 && !IsModifierKey(k->keysym)) {
 		if (releaseprotect) {
 			releaseprotect = 0;
 		} else {
