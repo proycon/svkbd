@@ -24,6 +24,8 @@ options:
 config.h:
 	cp config.def.h $@
 
+svkbd.o: config.h layout.${LAYOUT}.h
+
 .c.o:
 	${CC} ${SVKBD_CFLAGS} ${SVKBD_CPPFLAGS} -c $<
 
