@@ -4,10 +4,10 @@ static double overlay_delay = 1.0; //in seconds
 static double repeat_delay = 0.75; //in seconds, will not work on keys with overlays
 static int scan_rate = 50; //scan rate in microseconds, affects key repetition rate
 static int heightfactor = 14; //one row of keys takes up 1/x of the screen height
-static const char *fonts[] = {
+static const char *defaultfonts[] = {
 	"DejaVu Sans:bold:size=22"
 };
-static const char *colors[SchemeLast][2] = {
+static const char *defaultcolors[SchemeLast][2] = {
 	/*     fg         bg       */
 	[SchemeNorm] = { "#bbbbbb", "#132a33" },
 	[SchemeNormShift] = { "#008ac0", "#132a33" },

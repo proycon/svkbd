@@ -21,6 +21,7 @@
 #include <X11/Xproto.h>
 #include <X11/extensions/XTest.h>
 #include <X11/Xft/Xft.h>
+#include <X11/Xresource.h>
 #ifdef XINERAMA
 #include <X11/extensions/Xinerama.h>
 #endif
@@ -116,6 +117,9 @@ static char *name = "svkbd";
 static int debug = 0;
 static int numlayers = 0;
 static int numkeys = 0;
+
+static char *colors[10][2]; /* 10 schemes, 2 colors each */
+static char *fonts[] = {0};
 
 static KeySym ispressingkeysym;
 
@@ -691,6 +695,75 @@ run(void)
 }
 
 void
+readxresources(void) {
+        XrmInitialize();
+
+        char* xrm;
+        if ((xrm = XResourceManagerString(drw->dpy))) {
+                char *type;
+                XrmDatabase xdb = XrmGetStringDatabase(xrm);
+                XrmValue xval;
+
+                if (XrmGetResource(xdb, "svkbd.font", "*", &type, &xval) && !fonts[0])
+                        fonts[0] = strdup(xval.addr);
+
+                if (XrmGetResource(xdb, "svkbd.background", "*", &type, &xval) && !colors[SchemeNorm][ColBg] )
+                        colors[SchemeNorm][ColBg] = strdup(xval.addr);
+                if (XrmGetResource(xdb, "svkbd.foreground", "*", &type, &xval) && !colors[SchemeNorm][ColFg] )
+                        colors[SchemeNorm][ColFg] = strdup(xval.addr);
+
+                if (XrmGetResource(xdb, "svkbd.shiftforeground", "*", &type, &xval) && !colors[SchemeNormShift][ColFg] )
+                        colors[SchemeNormShift][ColFg] = strdup(xval.addr);
+                if (XrmGetResource(xdb, "svkbd.shiftbackground", "*", &type, &xval) && !colors[SchemeNormShift][ColBg] )
+                        colors[SchemeNormShift][ColBg] = strdup(xval.addr);
+
+                if (XrmGetResource(xdb, "svkbd.ABCforeground", "*", &type, &xval) && !colors[SchemeNormABC][ColFg] )
+                        colors[SchemeNormABC][ColFg] = strdup(xval.addr);
+                if (XrmGetResource(xdb, "svkbd.ABCbackground", "*", &type, &xval) && !colors[SchemeNormABC][ColBg] )
+                        colors[SchemeNormABC][ColBg] = strdup(xval.addr);
+
+                if (XrmGetResource(xdb, "svkbd.ABCshiftforeground", "*", &type, &xval) && !colors[SchemeNormShift][ColFg] )
+                        colors[SchemeNormShift][ColFg] = strdup(xval.addr);
+                if (XrmGetResource(xdb, "svkbd.ABCshiftbackground", "*", &type, &xval) && !colors[SchemeNormShift][ColBg] )
+                        colors[SchemeNormShift][ColBg] = strdup(xval.addr);
+
+                if (XrmGetResource(xdb, "svkbd.pressbackground", "*", &type, &xval) && !colors[SchemePress][ColBg] )
+                        colors[SchemePress][ColBg] = strdup(xval.addr);
+                if (XrmGetResource(xdb, "svkbd.pressforeground", "*", &type, &xval) && !colors[SchemePress][ColFg] )
+                        colors[SchemePress][ColFg] = strdup(xval.addr);
+
+                if (XrmGetResource(xdb, "svkbd.pressshiftbackground", "*", &type, &xval) && !colors[SchemePressShift][ColBg] )
+                        colors[SchemePressShift][ColBg] = strdup(xval.addr);
+                if (XrmGetResource(xdb, "svkbd.pressshiftforeground", "*", &type, &xval) && !colors[SchemePressShift][ColFg] )
+                        colors[SchemePressShift][ColFg] = strdup(xval.addr);
+
+                if (XrmGetResource(xdb, "svkbd.highlightbackground", "*", &type, &xval) && !colors[SchemeHighlight][ColBg] )
+                        colors[SchemeHighlight][ColBg] = strdup(xval.addr);
+                if (XrmGetResource(xdb, "svkbd.highlightforeground", "*", &type, &xval) && !colors[SchemeHighlight][ColFg] )
+                        colors[SchemeHighlight][ColFg] = strdup(xval.addr);
+
+                if (XrmGetResource(xdb, "svkbd.highlightshiftbackground", "*", &type, &xval) && !colors[SchemeHighlightShift][ColBg] )
+                        colors[SchemeHighlightShift][ColBg] = strdup(xval.addr);
+                if (XrmGetResource(xdb, "svkbd.highlightshiftforeground", "*", &type, &xval) && !colors[SchemeHighlightShift][ColFg] )
+                        colors[SchemeHighlightShift][ColFg] = strdup(xval.addr);
+
+                if (XrmGetResource(xdb, "svkbd.overlaybackground", "*", &type, &xval) && !colors[SchemeOverlay][ColBg] )
+                        colors[SchemeOverlay][ColBg] = strdup(xval.addr);
+                if (XrmGetResource(xdb, "svkbd.overlayforeground", "*", &type, &xval) && !colors[SchemeOverlay][ColFg] )
+                        colors[SchemeOverlay][ColFg] = strdup(xval.addr);
+
+                if (XrmGetResource(xdb, "svkbd.overlayshiftbackground", "*", &type, &xval) && !colors[SchemeOverlayShift][ColBg] )
+                        colors[SchemeOverlayShift][ColBg] = strdup(xval.addr);
+                if (XrmGetResource(xdb, "svkbd.overlayshiftforeground", "*", &type, &xval) && !colors[SchemeOverlayShift][ColFg] )
+                        colors[SchemeOverlayShift][ColFg] = strdup(xval.addr);
+
+
+                XrmDestroyDatabase(xdb);
+        }
+}
+
+
+void
 setup(void)
 {
 	XSetWindowAttributes wa;
@@ -721,8 +794,23 @@ setup(void)
 		sh = DisplayHeight(dpy, screen);
 	}
 	drw = drw_create(dpy, screen, root, sw, sh);
+
+	readxresources();
+
+        /* Apply defaults to font and colors*/
+        if ( !fonts[0] )
+           fonts[0] = strdup(defaultfonts[0]);
+        for (i = 0; i < SchemeLast; ++i){
+		for (j = 0; j < 2; ++j){
+			if ( !colors[i][j] )
+				colors[i][j] = strdup(defaultcolors[i][j]);
+		}
+        }
+
 	if (!drw_fontset_create(drw, fonts, LENGTH(fonts)))
 		die("no fonts could be loaded");
+	free(fonts[0]);
+
 	drw_setscheme(drw, scheme[SchemeNorm]);
 
 	/* find an unused keycode to use as a temporary keycode (derived from source:
@@ -754,6 +842,11 @@ setup(void)
 	/* init appearance */
 	for (j = 0; j < SchemeLast; j++)
 		scheme[j] = drw_scm_create(drw, colors[j], 2);
+
+	for (j = 0; j < SchemeLast; ++j) {
+		free(colors[j][ColFg]);
+		free(colors[j][ColBg]);
+	}
 
 	/* init atoms */
 	if (isdock) {
@@ -1067,7 +1160,7 @@ main(int argc, char *argv[])
 				wy = -1;
 			i++;
 		} else if (!strcmp(argv[i], "-fn")) { /* font or font set */
-			fonts[0] = argv[++i];
+			fonts[0] = strdup(argv[++i]);
 		} else if (!strcmp(argv[i], "-D")) {
 			debug = 1;
 		} else if (!strcmp(argv[i], "-h")) {
