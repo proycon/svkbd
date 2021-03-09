@@ -177,6 +177,8 @@ motionnotify(XEvent *e)
 	if ((lostfocus != -1) && (gainedfocus != -1) && (lostfocus != gainedfocus)) {
 		if (debug) printdbg("Clicking new key that gained focus\n");
 		press(&keys[gainedfocus], 0);
+		keys[gainedfocus].highlighted = True;
+
 	}
 }
 
