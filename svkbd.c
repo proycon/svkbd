@@ -584,7 +584,6 @@ unpress(Key *k, KeySym mod)
 					simulate_keypress(mod);
 				}
 				simulate_keypress(k->keysym);
-				if (printoutput) printkey(k, mod);
 				pressbegin.tv_sec = 0;
 				pressbegin.tv_usec = 0;
 	}
@@ -601,9 +600,9 @@ unpress(Key *k, KeySym mod)
 	for (i = 0; i < numkeys; i++) {
 		if (keys[i].pressed && !IsModifierKey(keys[i].keysym)) {
 			simulate_keyrelease(keys[i].keysym);
+			if ((printoutput) && (ispressingkeysym == keys[i].keysym)) printkey(&keys[i], mod);
 			keys[i].pressed = 0;
 			drawkey(&keys[i]);
-			break;
 		}
 	}
 	if (i != numkeys) {
