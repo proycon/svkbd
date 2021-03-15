@@ -101,7 +101,6 @@ static Drw *drw;
 static Window root, win;
 static Clr* scheme[SchemeLast];
 static Bool running = True, isdock = False;
-static KeySym pressedmod = 0;
 static struct timeval pressbegin;
 static int currentlayer = 0;
 static int enableoverlays = 1;
@@ -152,24 +151,24 @@ motionnotify(XEvent *e)
 			if (keys[i].highlighted != True) {
 				if (ispressing) {
 					gainedfocus = i;
-					keys[i].pressed = True;
 				} else {
 					keys[i].highlighted = True;
 				}
 				drawkey(&keys[i]);
 			}
 			continue;
+		} else if (keys[i].highlighted == True) {
+			keys[i].highlighted = False;
+			drawkey(&keys[i]);
 		}
+	}
 
-		if (!IsModifierKey(keys[i].keysym) && keys[i].pressed == True) {
+	for (i = 0; i < numkeys; i++) {
+		if (!IsModifierKey(keys[i].keysym) && keys[i].pressed == True && lostfocus != gainedfocus) {
 			if (debug) printdbg("Pressed key lost focus: %ld\n", keys[i].keysym);
 			lostfocus = i;
 			ispressingkeysym = 0;
-			unpress(&keys[i], 0);
-			drawkey(&keys[i]);
-		}
-		if (keys[i].highlighted == True) {
-			keys[i].highlighted = False;
+			keys[i].pressed = 0;
 			drawkey(&keys[i]);
 		}
 	}
@@ -177,6 +176,7 @@ motionnotify(XEvent *e)
 	if ((lostfocus != -1) && (gainedfocus != -1) && (lostfocus != gainedfocus)) {
 		if (debug) printdbg("Clicking new key that gained focus\n");
 		press(&keys[gainedfocus], 0);
+		keys[gainedfocus].pressed = True;
 		keys[gainedfocus].highlighted = True;
 
 	}
@@ -426,7 +426,7 @@ record_press_begin(KeySym ks)
 }
 
 void
-press(Key *k, KeySym mod)
+press(Key *k, KeySym buttonmod)
 {
 	int i;
 	int overlayidx = -1;
@@ -442,23 +442,20 @@ press(Key *k, KeySym mod)
 		if (enableoverlays && currentoverlay == -1)
 			overlayidx = hasoverlay(k->keysym);
 		if ((pressonrelease) || (enableoverlays && overlayidx != -1)) {
-			//if (!pressbegin.tv_sec && !pressbegin.tv_usec) {
-				/*record the begin of the press, don't simulate the actual keypress yet */
-				record_press_begin(k->keysym);
-			//}
+			/*record the begin of the press, don't simulate the actual keypress yet */
+			record_press_begin(k->keysym);
 		} else {
-			if (debug) printdbg("Simulating press: %ld (mod %ld)\n", k->keysym, mod);
+			if (debug) printdbg("Simulating press: %ld (mod %ld)\n", k->keysym, buttonmod);
 			for (i = 0; i < numkeys; i++) {
 				if (keys[i].pressed && IsModifierKey(keys[i].keysym)) {
 					simulate_keypress(keys[i].keysym);
 				}
 			}
-			pressedmod = mod;
-			if (pressedmod) {
-				simulate_keypress(mod);
+			if (buttonmod) {
+				simulate_keypress(buttonmod);
 			}
 			simulate_keypress(k->keysym);
-			if (printoutput) printkey(k, mod);
+			if (printoutput) printkey(k, buttonmod);
 
 			for (i = 0; i < numkeys; i++) {
 				if (keys[i].pressed && IsModifierKey(keys[i].keysym)) {
@@ -549,7 +546,7 @@ get_press_duration(void)
 }
 
 void
-unpress(Key *k, KeySym mod)
+unpress(Key *k, KeySym buttonmod)
 {
 	int i;
 
@@ -573,19 +570,19 @@ unpress(Key *k, KeySym mod)
 	}
 
 	if ((pressbegin.tv_sec || pressbegin.tv_usec) && (enableoverlays || pressonrelease) && k && k->keysym == ispressingkeysym) {
-				if (debug) printdbg("Delayed simulation of press after release: %ld\n", k->keysym);
-				/* simulate the press event, as we postponed it earlier in press() */
-				for (i = 0; i < numkeys; i++) {
-					if (keys[i].pressed && IsModifierKey(keys[i].keysym)) {
-						simulate_keypress(keys[i].keysym);
-					}
-				}
-				if (mod) {
-					simulate_keypress(mod);
-				}
-				simulate_keypress(k->keysym);
-				pressbegin.tv_sec = 0;
-				pressbegin.tv_usec = 0;
+		if (debug) printdbg("Delayed simulation of press after release: %ld\n", k->keysym);
+		/* simulate the press event, as we postponed it earlier in press() */
+		for (i = 0; i < numkeys; i++) {
+			if (keys[i].pressed && IsModifierKey(keys[i].keysym)) {
+				simulate_keypress(keys[i].keysym);
+			}
+		}
+		if (buttonmod) {
+			simulate_keypress(buttonmod);
+		}
+		simulate_keypress(k->keysym);
+		pressbegin.tv_sec = 0;
+		pressbegin.tv_usec = 0;
 	}
 
 	if (debug) {
@@ -600,18 +597,19 @@ unpress(Key *k, KeySym mod)
 	for (i = 0; i < numkeys; i++) {
 		if (keys[i].pressed && !IsModifierKey(keys[i].keysym)) {
 			simulate_keyrelease(keys[i].keysym);
-			if ((printoutput) && (ispressingkeysym == keys[i].keysym)) printkey(&keys[i], mod);
+			if (printoutput) printkey(&keys[i], buttonmod);
 			keys[i].pressed = 0;
 			drawkey(&keys[i]);
 		}
 	}
-	if (i != numkeys) {
-		if (mod) {
-			simulate_keyrelease(mod);
-		}
 
+	if (buttonmod) {
+		simulate_keyrelease(buttonmod);
+	}
+
+	if ((k == NULL) || (!IsModifierKey(k->keysym))) {
 		for (i = 0; i < numkeys; i++) {
-			if (keys[i].pressed) {
+			if (keys[i].pressed && IsModifierKey(keys[i].keysym)) {
 				simulate_keyrelease(keys[i].keysym);
 				keys[i].pressed = 0;
 				drawkey(&keys[i]);
@@ -697,70 +695,70 @@ run(void)
 
 void
 readxresources(void) {
-        XrmInitialize();
+	XrmInitialize();
 
-        char* xrm;
-        if ((xrm = XResourceManagerString(drw->dpy))) {
-                char *type;
-                XrmDatabase xdb = XrmGetStringDatabase(xrm);
-                XrmValue xval;
+	char* xrm;
+	if ((xrm = XResourceManagerString(drw->dpy))) {
+		char *type;
+		XrmDatabase xdb = XrmGetStringDatabase(xrm);
+		XrmValue xval;
 
-                if (XrmGetResource(xdb, "svkbd.font", "*", &type, &xval) && !fonts[0])
-                        fonts[0] = strdup(xval.addr);
+		if (XrmGetResource(xdb, "svkbd.font", "*", &type, &xval) && !fonts[0])
+				fonts[0] = strdup(xval.addr);
 
-                if (XrmGetResource(xdb, "svkbd.background", "*", &type, &xval) && !colors[SchemeNorm][ColBg] )
-                        colors[SchemeNorm][ColBg] = strdup(xval.addr);
-                if (XrmGetResource(xdb, "svkbd.foreground", "*", &type, &xval) && !colors[SchemeNorm][ColFg] )
-                        colors[SchemeNorm][ColFg] = strdup(xval.addr);
+		if (XrmGetResource(xdb, "svkbd.background", "*", &type, &xval) && !colors[SchemeNorm][ColBg] )
+				colors[SchemeNorm][ColBg] = strdup(xval.addr);
+		if (XrmGetResource(xdb, "svkbd.foreground", "*", &type, &xval) && !colors[SchemeNorm][ColFg] )
+				colors[SchemeNorm][ColFg] = strdup(xval.addr);
 
-                if (XrmGetResource(xdb, "svkbd.shiftforeground", "*", &type, &xval) && !colors[SchemeNormShift][ColFg] )
-                        colors[SchemeNormShift][ColFg] = strdup(xval.addr);
-                if (XrmGetResource(xdb, "svkbd.shiftbackground", "*", &type, &xval) && !colors[SchemeNormShift][ColBg] )
-                        colors[SchemeNormShift][ColBg] = strdup(xval.addr);
+		if (XrmGetResource(xdb, "svkbd.shiftforeground", "*", &type, &xval) && !colors[SchemeNormShift][ColFg] )
+				colors[SchemeNormShift][ColFg] = strdup(xval.addr);
+		if (XrmGetResource(xdb, "svkbd.shiftbackground", "*", &type, &xval) && !colors[SchemeNormShift][ColBg] )
+				colors[SchemeNormShift][ColBg] = strdup(xval.addr);
 
-                if (XrmGetResource(xdb, "svkbd.ABCforeground", "*", &type, &xval) && !colors[SchemeNormABC][ColFg] )
-                        colors[SchemeNormABC][ColFg] = strdup(xval.addr);
-                if (XrmGetResource(xdb, "svkbd.ABCbackground", "*", &type, &xval) && !colors[SchemeNormABC][ColBg] )
-                        colors[SchemeNormABC][ColBg] = strdup(xval.addr);
+		if (XrmGetResource(xdb, "svkbd.ABCforeground", "*", &type, &xval) && !colors[SchemeNormABC][ColFg] )
+				colors[SchemeNormABC][ColFg] = strdup(xval.addr);
+		if (XrmGetResource(xdb, "svkbd.ABCbackground", "*", &type, &xval) && !colors[SchemeNormABC][ColBg] )
+				colors[SchemeNormABC][ColBg] = strdup(xval.addr);
 
-                if (XrmGetResource(xdb, "svkbd.ABCshiftforeground", "*", &type, &xval) && !colors[SchemeNormShift][ColFg] )
-                        colors[SchemeNormShift][ColFg] = strdup(xval.addr);
-                if (XrmGetResource(xdb, "svkbd.ABCshiftbackground", "*", &type, &xval) && !colors[SchemeNormShift][ColBg] )
-                        colors[SchemeNormShift][ColBg] = strdup(xval.addr);
+		if (XrmGetResource(xdb, "svkbd.ABCshiftforeground", "*", &type, &xval) && !colors[SchemeNormShift][ColFg] )
+				colors[SchemeNormShift][ColFg] = strdup(xval.addr);
+		if (XrmGetResource(xdb, "svkbd.ABCshiftbackground", "*", &type, &xval) && !colors[SchemeNormShift][ColBg] )
+				colors[SchemeNormShift][ColBg] = strdup(xval.addr);
 
-                if (XrmGetResource(xdb, "svkbd.pressbackground", "*", &type, &xval) && !colors[SchemePress][ColBg] )
-                        colors[SchemePress][ColBg] = strdup(xval.addr);
-                if (XrmGetResource(xdb, "svkbd.pressforeground", "*", &type, &xval) && !colors[SchemePress][ColFg] )
-                        colors[SchemePress][ColFg] = strdup(xval.addr);
+		if (XrmGetResource(xdb, "svkbd.pressbackground", "*", &type, &xval) && !colors[SchemePress][ColBg] )
+				colors[SchemePress][ColBg] = strdup(xval.addr);
+		if (XrmGetResource(xdb, "svkbd.pressforeground", "*", &type, &xval) && !colors[SchemePress][ColFg] )
+				colors[SchemePress][ColFg] = strdup(xval.addr);
 
-                if (XrmGetResource(xdb, "svkbd.pressshiftbackground", "*", &type, &xval) && !colors[SchemePressShift][ColBg] )
-                        colors[SchemePressShift][ColBg] = strdup(xval.addr);
-                if (XrmGetResource(xdb, "svkbd.pressshiftforeground", "*", &type, &xval) && !colors[SchemePressShift][ColFg] )
-                        colors[SchemePressShift][ColFg] = strdup(xval.addr);
+		if (XrmGetResource(xdb, "svkbd.pressshiftbackground", "*", &type, &xval) && !colors[SchemePressShift][ColBg] )
+				colors[SchemePressShift][ColBg] = strdup(xval.addr);
+		if (XrmGetResource(xdb, "svkbd.pressshiftforeground", "*", &type, &xval) && !colors[SchemePressShift][ColFg] )
+				colors[SchemePressShift][ColFg] = strdup(xval.addr);
 
-                if (XrmGetResource(xdb, "svkbd.highlightbackground", "*", &type, &xval) && !colors[SchemeHighlight][ColBg] )
-                        colors[SchemeHighlight][ColBg] = strdup(xval.addr);
-                if (XrmGetResource(xdb, "svkbd.highlightforeground", "*", &type, &xval) && !colors[SchemeHighlight][ColFg] )
-                        colors[SchemeHighlight][ColFg] = strdup(xval.addr);
+		if (XrmGetResource(xdb, "svkbd.highlightbackground", "*", &type, &xval) && !colors[SchemeHighlight][ColBg] )
+				colors[SchemeHighlight][ColBg] = strdup(xval.addr);
+		if (XrmGetResource(xdb, "svkbd.highlightforeground", "*", &type, &xval) && !colors[SchemeHighlight][ColFg] )
+				colors[SchemeHighlight][ColFg] = strdup(xval.addr);
 
-                if (XrmGetResource(xdb, "svkbd.highlightshiftbackground", "*", &type, &xval) && !colors[SchemeHighlightShift][ColBg] )
-                        colors[SchemeHighlightShift][ColBg] = strdup(xval.addr);
-                if (XrmGetResource(xdb, "svkbd.highlightshiftforeground", "*", &type, &xval) && !colors[SchemeHighlightShift][ColFg] )
-                        colors[SchemeHighlightShift][ColFg] = strdup(xval.addr);
+		if (XrmGetResource(xdb, "svkbd.highlightshiftbackground", "*", &type, &xval) && !colors[SchemeHighlightShift][ColBg] )
+				colors[SchemeHighlightShift][ColBg] = strdup(xval.addr);
+		if (XrmGetResource(xdb, "svkbd.highlightshiftforeground", "*", &type, &xval) && !colors[SchemeHighlightShift][ColFg] )
+				colors[SchemeHighlightShift][ColFg] = strdup(xval.addr);
 
-                if (XrmGetResource(xdb, "svkbd.overlaybackground", "*", &type, &xval) && !colors[SchemeOverlay][ColBg] )
-                        colors[SchemeOverlay][ColBg] = strdup(xval.addr);
-                if (XrmGetResource(xdb, "svkbd.overlayforeground", "*", &type, &xval) && !colors[SchemeOverlay][ColFg] )
-                        colors[SchemeOverlay][ColFg] = strdup(xval.addr);
+		if (XrmGetResource(xdb, "svkbd.overlaybackground", "*", &type, &xval) && !colors[SchemeOverlay][ColBg] )
+				colors[SchemeOverlay][ColBg] = strdup(xval.addr);
+		if (XrmGetResource(xdb, "svkbd.overlayforeground", "*", &type, &xval) && !colors[SchemeOverlay][ColFg] )
+				colors[SchemeOverlay][ColFg] = strdup(xval.addr);
 
-                if (XrmGetResource(xdb, "svkbd.overlayshiftbackground", "*", &type, &xval) && !colors[SchemeOverlayShift][ColBg] )
-                        colors[SchemeOverlayShift][ColBg] = strdup(xval.addr);
-                if (XrmGetResource(xdb, "svkbd.overlayshiftforeground", "*", &type, &xval) && !colors[SchemeOverlayShift][ColFg] )
-                        colors[SchemeOverlayShift][ColFg] = strdup(xval.addr);
+		if (XrmGetResource(xdb, "svkbd.overlayshiftbackground", "*", &type, &xval) && !colors[SchemeOverlayShift][ColBg] )
+				colors[SchemeOverlayShift][ColBg] = strdup(xval.addr);
+		if (XrmGetResource(xdb, "svkbd.overlayshiftforeground", "*", &type, &xval) && !colors[SchemeOverlayShift][ColFg] )
+				colors[SchemeOverlayShift][ColFg] = strdup(xval.addr);
 
 
-                XrmDestroyDatabase(xdb);
-        }
+		XrmDestroyDatabase(xdb);
+	}
 }
 
 
@@ -798,17 +796,17 @@ setup(void)
 
 	readxresources();
 
-        /* Apply defaults to font and colors*/
-        if ( !fonts[0] )
-           fonts[0] = strdup(defaultfonts[0]);
-        for (i = 0; i < SchemeLast; ++i){
+	/* Apply defaults to font and colors*/
+	if ( !fonts[0] )
+	   fonts[0] = strdup(defaultfonts[0]);
+	for (i = 0; i < SchemeLast; ++i){
 		for (j = 0; j < 2; ++j){
 			if ( !colors[i][j] )
 				colors[i][j] = strdup(defaultcolors[i][j]);
 		}
-        }
+	}
 
-	if (!drw_fontset_create(drw, fonts, LENGTH(fonts)))
+	if (!drw_fontset_create(drw, (const char **) fonts, LENGTH(fonts)))
 		die("no fonts could be loaded");
 	free(fonts[0]);
 
@@ -842,7 +840,7 @@ setup(void)
 
 	/* init appearance */
 	for (j = 0; j < SchemeLast; j++)
-		scheme[j] = drw_scm_create(drw, colors[j], 2);
+		scheme[j] = drw_scm_create(drw, (const char **) colors[j], 2);
 
 	for (j = 0; j < SchemeLast; ++j) {
 		free(colors[j][ColFg]);
