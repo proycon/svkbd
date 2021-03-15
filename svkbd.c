@@ -245,7 +245,6 @@ cleanup(void)
 	drw_sync(drw);
 	drw_free(drw);
 	XSync(dpy, False);
-	drw_free(drw);
 	XDestroyWindow(dpy, win);
 	XSync(dpy, False);
 	XSetInputFocus(dpy, PointerRoot, RevertToPointerRoot, CurrentTime);

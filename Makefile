@@ -27,12 +27,12 @@ config.h:
 svkbd.o: config.h layout.${LAYOUT}.h
 
 .c.o:
-	${CC} ${SVKBD_CFLAGS} ${SVKBD_CPPFLAGS} -c $<
+	${CC} -g ${SVKBD_CFLAGS} ${SVKBD_CPPFLAGS} -c $<
 
 ${OBJ}: config.h config.mk
 
 ${BIN}: ${OBJ}
-	${CC} -o ${BIN} ${OBJ} ${SVKBD_LDFLAGS}
+	${CC} -g -o ${BIN} ${OBJ} ${SVKBD_LDFLAGS}
 
 clean:
 	rm -f ${NAME}-?? ${NAME}-??.o ${OBJ} ${BIN}
