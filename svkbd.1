@@ -1,4 +1,4 @@
-.Dd August 4, 2020
+.Dd March 15, 2021
 .Dt SVKBD 1
 .Os
 .Sh NAME
@@ -41,11 +41,17 @@ One row of keys takes up 1/heighfactor of the screen's total height.
 Comma separated list of layers to enable (by name). If not set, all layers
 in the layout will be available.
 The layer names are defined by the layout you compiled.
+.It Fl n
+Do not simulate key presses for X
+.It Fl R
+Disable press-on-release
 .It Fl s Ar layer
 The layer to show on program start-up (by name). If not set, the first
 layer of the layout will be shown.
 .It Fl O
 Disable overlay functionality.
+.It Fl o
+Print pressed keys to standard output
 .It Fl v
 Show the version information.
 .El
@@ -63,6 +69,42 @@ Set this to 0 if you want to disable overlay functionality.
 Affects the vertical space taken by the keyboard.
 One row of keys takes up 1/heighfactor of the screen's total height.
 .El
+.Sh XRESOURCES
+The appearance of svkbd can be configured via xresources:
+.Bl -tag -width Ds
+.It Ev svkbd.font
+An Xft font specification like "Monospace:bold:size=20".
+.It Ev svkbd.background
+The background colour for the keycaps (in #rrggbb syntax)
+.It Ev svkbd.foreground
+The foreground colour for the keycaps (in #rrggbb syntax)
+.It Ev svkbd.shiftforeground
+The foreground colour for the secondary labels (shift layer) on the keycaps
+.It Ev svkbd.shiftbackground
+The background colour for the secondary labels (shift layer) on the keycaps
+.It Ev svkbd.abcforeground
+.It Ev svkbd.abcbackbround
+The colour for alphabetical keys
+.It Ev svkbd.abcshiftbackground
+.It Ev svkbd.abcshiftforeground
+The colour for the secondary labels (shift layer) on alphabetical keys
+.It Ev svkbd.pressforeground
+.It Ev svkbd.pressforebackground
+The colour for keys when held pressed
+.It Ev svkbd.highlightforeground
+.It Ev svkbd.highlightforebackground
+The colour for keys when hovering over them or just after release
+.It Ev svkbd.highlightshiftforeground
+.It Ev svkbd.highlightshiftforebackground
+The colour for the secondary label on keys when hovering over them or just
+after release
+.It Ev svkbd.overlayforeground
+.It Ev svkbd.overlaybackground
+The colour for keys when they are part of an overlay
+.It Ev svkbd.overlayshiftforeground
+.It Ev svkbd.overlayshiftbackground
+The colour for the secondary label on keys when they are part of an overlay
+.El
 .Sh SEE ALSO
 .Xr XParseGeometry 3
 .Sh AUTHORS
@@ -70,3 +112,5 @@ One row of keys takes up 1/heighfactor of the screen's total height.
 .An Enno Boland Aq Mt gottox@s01.de
 .An Miles Alan Aq Mt m@milesalan.com
 .An Maarten van Gompel Aq Mt proycon@anaproy.nl
+.An Tetrakist Aq Mt tetrakist@mutandum.com
+.An Stacy Aq Mt stacy@stacyharper.net
