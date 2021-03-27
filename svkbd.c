@@ -11,6 +11,7 @@
 #include <time.h>
 #include <unistd.h>
 #include <ctype.h>
+#include <err.h>
 
 #include <X11/keysym.h>
 #include <X11/keysymdef.h>
@@ -84,6 +85,8 @@ static void togglelayer();
 static void unpress(Key *k, KeySym mod);
 static void updatekeys();
 static void printkey(Key *k, KeySym mod);
+static char *estrdup(const char *str);
+
 
 /* variables */
 static int screen;
@@ -134,6 +137,12 @@ Bool sigtermd = False;
 
 static Key keys[KEYS] = { NULL };
 static Key* layers[LAYERS];
+
+char * estrdup(const char *str) {
+	char * tmp = strdup(str);
+	if (tmp == NULL) errx(1, "strdup failed");
+	return tmp;
+}
 
 void
 motionnotify(XEvent *e)
@@ -703,57 +712,57 @@ readxresources(void) {
 		XrmValue xval;
 
 		if (XrmGetResource(xdb, "svkbd.font", "*", &type, &xval) && !fonts[0])
-				fonts[0] = strdup(xval.addr);
+				fonts[0] = estrdup(xval.addr);
 
 		if (XrmGetResource(xdb, "svkbd.background", "*", &type, &xval) && !colors[SchemeNorm][ColBg] )
-				colors[SchemeNorm][ColBg] = strdup(xval.addr);
+				colors[SchemeNorm][ColBg] = estrdup(xval.addr);
 		if (XrmGetResource(xdb, "svkbd.foreground", "*", &type, &xval) && !colors[SchemeNorm][ColFg] )
-				colors[SchemeNorm][ColFg] = strdup(xval.addr);
+				colors[SchemeNorm][ColFg] = estrdup(xval.addr);
 
 		if (XrmGetResource(xdb, "svkbd.shiftforeground", "*", &type, &xval) && !colors[SchemeNormShift][ColFg] )
-				colors[SchemeNormShift][ColFg] = strdup(xval.addr);
+				colors[SchemeNormShift][ColFg] = estrdup(xval.addr);
 		if (XrmGetResource(xdb, "svkbd.shiftbackground", "*", &type, &xval) && !colors[SchemeNormShift][ColBg] )
-				colors[SchemeNormShift][ColBg] = strdup(xval.addr);
+				colors[SchemeNormShift][ColBg] = estrdup(xval.addr);
 
 		if (XrmGetResource(xdb, "svkbd.ABCforeground", "*", &type, &xval) && !colors[SchemeNormABC][ColFg] )
-				colors[SchemeNormABC][ColFg] = strdup(xval.addr);
+				colors[SchemeNormABC][ColFg] = estrdup(xval.addr);
 		if (XrmGetResource(xdb, "svkbd.ABCbackground", "*", &type, &xval) && !colors[SchemeNormABC][ColBg] )
-				colors[SchemeNormABC][ColBg] = strdup(xval.addr);
+				colors[SchemeNormABC][ColBg] = estrdup(xval.addr);
 
 		if (XrmGetResource(xdb, "svkbd.ABCshiftforeground", "*", &type, &xval) && !colors[SchemeNormShift][ColFg] )
-				colors[SchemeNormShift][ColFg] = strdup(xval.addr);
+				colors[SchemeNormShift][ColFg] = estrdup(xval.addr);
 		if (XrmGetResource(xdb, "svkbd.ABCshiftbackground", "*", &type, &xval) && !colors[SchemeNormShift][ColBg] )
-				colors[SchemeNormShift][ColBg] = strdup(xval.addr);
+				colors[SchemeNormShift][ColBg] = estrdup(xval.addr);
 
 		if (XrmGetResource(xdb, "svkbd.pressbackground", "*", &type, &xval) && !colors[SchemePress][ColBg] )
-				colors[SchemePress][ColBg] = strdup(xval.addr);
+				colors[SchemePress][ColBg] = estrdup(xval.addr);
 		if (XrmGetResource(xdb, "svkbd.pressforeground", "*", &type, &xval) && !colors[SchemePress][ColFg] )
-				colors[SchemePress][ColFg] = strdup(xval.addr);
+				colors[SchemePress][ColFg] = estrdup(xval.addr);
 
 		if (XrmGetResource(xdb, "svkbd.pressshiftbackground", "*", &type, &xval) && !colors[SchemePressShift][ColBg] )
-				colors[SchemePressShift][ColBg] = strdup(xval.addr);
+				colors[SchemePressShift][ColBg] = estrdup(xval.addr);
 		if (XrmGetResource(xdb, "svkbd.pressshiftforeground", "*", &type, &xval) && !colors[SchemePressShift][ColFg] )
-				colors[SchemePressShift][ColFg] = strdup(xval.addr);
+				colors[SchemePressShift][ColFg] = estrdup(xval.addr);
 
 		if (XrmGetResource(xdb, "svkbd.highlightbackground", "*", &type, &xval) && !colors[SchemeHighlight][ColBg] )
-				colors[SchemeHighlight][ColBg] = strdup(xval.addr);
+				colors[SchemeHighlight][ColBg] = estrdup(xval.addr);
 		if (XrmGetResource(xdb, "svkbd.highlightforeground", "*", &type, &xval) && !colors[SchemeHighlight][ColFg] )
-				colors[SchemeHighlight][ColFg] = strdup(xval.addr);
+				colors[SchemeHighlight][ColFg] = estrdup(xval.addr);
 
 		if (XrmGetResource(xdb, "svkbd.highlightshiftbackground", "*", &type, &xval) && !colors[SchemeHighlightShift][ColBg] )
-				colors[SchemeHighlightShift][ColBg] = strdup(xval.addr);
+				colors[SchemeHighlightShift][ColBg] = estrdup(xval.addr);
 		if (XrmGetResource(xdb, "svkbd.highlightshiftforeground", "*", &type, &xval) && !colors[SchemeHighlightShift][ColFg] )
-				colors[SchemeHighlightShift][ColFg] = strdup(xval.addr);
+				colors[SchemeHighlightShift][ColFg] = estrdup(xval.addr);
 
 		if (XrmGetResource(xdb, "svkbd.overlaybackground", "*", &type, &xval) && !colors[SchemeOverlay][ColBg] )
-				colors[SchemeOverlay][ColBg] = strdup(xval.addr);
+				colors[SchemeOverlay][ColBg] = estrdup(xval.addr);
 		if (XrmGetResource(xdb, "svkbd.overlayforeground", "*", &type, &xval) && !colors[SchemeOverlay][ColFg] )
-				colors[SchemeOverlay][ColFg] = strdup(xval.addr);
+				colors[SchemeOverlay][ColFg] = estrdup(xval.addr);
 
 		if (XrmGetResource(xdb, "svkbd.overlayshiftbackground", "*", &type, &xval) && !colors[SchemeOverlayShift][ColBg] )
-				colors[SchemeOverlayShift][ColBg] = strdup(xval.addr);
+				colors[SchemeOverlayShift][ColBg] = estrdup(xval.addr);
 		if (XrmGetResource(xdb, "svkbd.overlayshiftforeground", "*", &type, &xval) && !colors[SchemeOverlayShift][ColFg] )
-				colors[SchemeOverlayShift][ColFg] = strdup(xval.addr);
+				colors[SchemeOverlayShift][ColFg] = estrdup(xval.addr);
 
 
 		XrmDestroyDatabase(xdb);
@@ -797,11 +806,11 @@ setup(void)
 
 	/* Apply defaults to font and colors*/
 	if ( !fonts[0] )
-	   fonts[0] = strdup(defaultfonts[0]);
+	   fonts[0] = estrdup(defaultfonts[0]);
 	for (i = 0; i < SchemeLast; ++i){
 		for (j = 0; j < 2; ++j){
 			if ( !colors[i][j] )
-				colors[i][j] = strdup(defaultcolors[i][j]);
+				colors[i][j] = estrdup(defaultcolors[i][j]);
 		}
 	}
 
@@ -1122,7 +1131,7 @@ main(int argc, char *argv[])
 			enableoverlays = atoi(tmp);
 	}
 	if ((tmp = getenv("SVKBD_LAYERS"))) {
-		if (!(layer_names_list = strdup(tmp)))
+		if (!(layer_names_list = estrdup(tmp)))
 			die("memory allocation error");
 	}
 
@@ -1158,7 +1167,7 @@ main(int argc, char *argv[])
 				wy = -1;
 			i++;
 		} else if (!strcmp(argv[i], "-fn")) { /* font or font set */
-			fonts[0] = strdup(argv[++i]);
+			fonts[0] = estrdup(argv[++i]);
 		} else if (!strcmp(argv[i], "-D")) {
 			debug = 1;
 		} else if (!strcmp(argv[i], "-h")) {
@@ -1175,7 +1184,7 @@ main(int argc, char *argv[])
 			if (i >= argc - 1)
 				continue;
 			free(layer_names_list);
-			if (!(layer_names_list = strdup(argv[++i])))
+			if (!(layer_names_list = estrdup(argv[++i])))
 				die("memory allocation error");
 		} else if (!strcmp(argv[i], "-s")) {
 			if (i >= argc - 1)
