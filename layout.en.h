@@ -70,15 +70,14 @@ Buttonmod buttonmods[] = {
 
 #define OVERLAYS 1
 static Key overlay[OVERLAYS] = {
-        { 0, XK_Cancel },
+	{ 0, XK_Cancel },
 };
 
 #define LAYERS 1
 static char* layer_names[LAYERS] = {
-    "en",
+	"en",
 };
 
 static Key* available_layers[LAYERS] = {
-    keys_en,
+	keys_en,
 };
-
