@@ -504,7 +504,7 @@ printkey(Key *k, KeySym mod) {
 	XKeyPressedEvent event;
 	event.type = KeyPress;
 	event.display = dpy;
-	event.state = ShiftMask ? shift : 0;
+	event.state = shift ? ShiftMask : 0;
 	event.keycode = XKeysymToKeycode(dpy, *keysym);
 	if (event.keycode == 0)
 		event.keycode = tmp_remap(*keysym);
