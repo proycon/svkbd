@@ -165,7 +165,8 @@ motionnotify(XEvent *e)
 
 	for (i = 0; i < numkeys; i++) {
 		if (!IsModifierKey(keys[i].keysym) && keys[i].pressed == True && lostfocus != gainedfocus) {
-			if (debug) printdbg("Pressed key lost focus: %ld\n", keys[i].keysym);
+			if (debug)
+				printdbg("Pressed key lost focus: %ld\n", keys[i].keysym);
 			lostfocus = i;
 			ispressingkeysym = 0;
 			keys[i].pressed = 0;
@@ -174,11 +175,11 @@ motionnotify(XEvent *e)
 	}
 
 	if ((lostfocus != -1) && (gainedfocus != -1) && (lostfocus != gainedfocus)) {
-		if (debug) printdbg("Clicking new key that gained focus\n");
+		if (debug)
+			printdbg("Clicking new key that gained focus\n");
 		press(&keys[gainedfocus], 0);
 		keys[gainedfocus].pressed = True;
 		keys[gainedfocus].highlighted = True;
-
 	}
 }
 
@@ -195,16 +196,16 @@ buttonpress(XEvent *e)
 	if (!(k = findkey(ev->x, ev->y)))
 		return;
 
-	if (k->modifier)
+	if (k->modifier) {
 		mod = k->modifier;
-	else
+	} else {
 		for (i = 0; i < LENGTH(buttonmods); i++) {
 			if (ev->button == buttonmods[i].button) {
 				mod = buttonmods[i].mod;
 				break;
 			}
 		}
-
+	}
 	press(k, mod);
 }
 
@@ -432,7 +433,8 @@ press(Key *k, KeySym buttonmod)
 
 	k->pressed = !k->pressed;
 
-	if (debug) printdbg("Begin click: %ld\n", k->keysym);
+	if (debug)
+		printdbg("Begin click: %ld\n", k->keysym);
 	pressbegin.tv_sec = 0;
 	pressbegin.tv_usec = 0;
 	ispressingkeysym = 0;
@@ -444,17 +446,18 @@ press(Key *k, KeySym buttonmod)
 			/*record the begin of the press, don't simulate the actual keypress yet */
 			record_press_begin(k->keysym);
 		} else {
-			if (debug) printdbg("Simulating press: %ld (mod %ld)\n", k->keysym, buttonmod);
+			if (debug)
+				printdbg("Simulating press: %ld (mod %ld)\n", k->keysym, buttonmod);
 			for (i = 0; i < numkeys; i++) {
 				if (keys[i].pressed && IsModifierKey(keys[i].keysym)) {
 					simulate_keypress(keys[i].keysym);
 				}
 			}
-			if (buttonmod) {
+			if (buttonmod)
 				simulate_keypress(buttonmod);
-			}
 			simulate_keypress(k->keysym);
-			if (printoutput) printkey(k, buttonmod);
+			if (printoutput)
+				printkey(k, buttonmod);
 
 			for (i = 0; i < numkeys; i++) {
 				if (keys[i].pressed && IsModifierKey(keys[i].keysym)) {
@@ -476,19 +479,24 @@ tmp_remap(KeySym keysym)
 }
 
 void
-printkey(Key *k, KeySym mod) {
-	int i;
-	int shift = (mod == XK_Shift_L) || (mod == XK_Shift_R) || (mod == XK_Shift_Lock);
+printkey(Key *k, KeySym mod)
+{
+	int i, shift;
+
+	shift = (mod == XK_Shift_L) || (mod == XK_Shift_R) || (mod == XK_Shift_Lock);
 	if (!shift) {
 		for (i = 0; i < numkeys; i++) {
-			if ((keys[i].pressed) && ((keys[i].keysym == XK_Shift_L) || (keys[i].keysym == XK_Shift_R) || (keys[i].keysym == XK_Shift_Lock))) {
+			if ((keys[i].pressed) && ((keys[i].keysym == XK_Shift_L) ||
+			    (keys[i].keysym == XK_Shift_R) || (keys[i].keysym == XK_Shift_Lock))) {
 				shift = True;
 				break;
 			}
 		}
 	}
-	if (debug) printdbg("Printing key %ld (shift=%d)\n", k->keysym, shift);
-	if (k->keysym == XK_Cancel) return;
+	if (debug)
+		printdbg("Printing key %ld (shift=%d)\n", k->keysym, shift);
+	if (k->keysym == XK_Cancel)
+		return;
 	KeySym * keysym = &(k->keysym);
 	XIM xim = XOpenIM(dpy, 0, 0, 0);
 	XIC xic = XCreateIC(xim, XNInputStyle, XIMPreeditNothing | XIMStatusNothing, NULL);
@@ -506,7 +514,8 @@ printkey(Key *k, KeySym mod) {
 	Status return_status;
 	int l = Xutf8LookupString(xic, &event, buffer, 32, &ignore, &return_status);
 	buffer[l] = '\0';
-	if (debug) printdbg("Print buffer: [%s] (length=%d)\n", &buffer, l);
+	if (debug)
+		printdbg("Print buffer: [%s] (length=%d)\n", &buffer, l);
 	printf("%s", buffer);
 
 	XDestroyIC(xic);
@@ -570,7 +579,8 @@ unpress(Key *k, KeySym buttonmod)
 	}
 
 	if ((pressbegin.tv_sec || pressbegin.tv_usec) && (enableoverlays || pressonrelease) && k && k->keysym == ispressingkeysym) {
-		if (debug) printdbg("Delayed simulation of press after release: %ld\n", k->keysym);
+		if (debug)
+			printdbg("Delayed simulation of press after release: %ld\n", k->keysym);
 		/* simulate the press event, as we postponed it earlier in press() */
 		for (i = 0; i < numkeys; i++) {
 			if (keys[i].pressed && IsModifierKey(keys[i].keysym)) {
@@ -597,7 +607,8 @@ unpress(Key *k, KeySym buttonmod)
 	for (i = 0; i < numkeys; i++) {
 		if (keys[i].pressed && !IsModifierKey(keys[i].keysym)) {
 			simulate_keyrelease(keys[i].keysym);
-			if (printoutput) printkey(&keys[i], buttonmod);
+			if (printoutput)
+				printkey(&keys[i], buttonmod);
 			keys[i].pressed = 0;
 			drawkey(&keys[i]);
 		}
@@ -659,17 +670,20 @@ run(void)
 			/* time-out expired without anything interesting happening, check for long-presses */
 			if (ispressing && ispressingkeysym) {
 				duration = get_press_duration();
-				if (debug == 2) printdbg("%f\n", duration);
+				if (debug == 2)
+					printdbg("%f\n", duration);
 				overlayidx = hasoverlay(ispressingkeysym);
 				duration = get_press_duration();
 				if ((overlayidx != -1) && (duration >= overlay_delay)) {
-					if (debug) printdbg("press duration %f, activating overlay\n", duration);
+					if (debug)
+						printdbg("press duration %f, activating overlay\n", duration);
 					showoverlay(overlayidx);
 					pressbegin.tv_sec = 0;
 					pressbegin.tv_usec = 0;
 					ispressingkeysym = 0;
 				} else if ((overlayidx == -1) && (duration >= repeat_delay)) {
-					if (debug) printdbg("press duration %f, activating repeat\n", duration);
+					if (debug)
+						printdbg("press duration %f, activating repeat\n", duration);
 					simulate_keyrelease(ispressingkeysym);
 					simulate_keypress(ispressingkeysym);
 					XSync(dpy, False);
@@ -684,7 +698,8 @@ run(void)
 					since then X doesn't know the keyup is never coming.. (since
 					process will be dead before finger lifts - in that case we
 					just trigger out fake up presses for all keys */
-			if (debug) printdbg("signal received, releasing all keys");
+			if (debug)
+				printdbg("signal received, releasing all keys");
 			for (i = 0; i < numkeys; i++) {
 				XTestFakeKeyEvent(dpy, XKeysymToKeycode(dpy, keys[i].keysym), False, 0);
 			}
@@ -694,14 +709,18 @@ run(void)
 }
 
 void
-readxresources(void) {
+readxresources(void)
+{
+	XrmDatabase xdb;
+	XrmValue xval;
+	char *type, *xrm;
+
 	XrmInitialize();
 
-	char* xrm;
 	if ((xrm = XResourceManagerString(drw->dpy))) {
-		char *type;
-		XrmDatabase xdb = XrmGetStringDatabase(xrm);
-		XrmValue xval;
+
+		xdb = XrmGetStringDatabase(xrm);
+
 
 		if (XrmGetResource(xdb, "svkbd.font", "*", &type, &xval) && !fonts[0])
 			fonts[0] = estrdup(xval.addr);
@@ -761,7 +780,6 @@ readxresources(void) {
 	}
 }
 
-
 void
 setup(void)
 {
@@ -797,11 +815,11 @@ setup(void)
 	readxresources();
 
 	/* Apply defaults to font and colors*/
-	if ( !fonts[0] )
-	   fonts[0] = estrdup(defaultfonts[0]);
-	for (i = 0; i < SchemeLast; ++i){
-		for (j = 0; j < 2; ++j){
-			if ( !colors[i][j] )
+	if (!fonts[0])
+		fonts[0] = estrdup(defaultfonts[0]);
+	for (i = 0; i < SchemeLast; ++i) {
+		for (j = 0; j < 2; ++j) {
+			if (!colors[i][j])
 				colors[i][j] = estrdup(defaultcolors[i][j]);
 		}
 	}
@@ -974,7 +992,8 @@ cyclelayer(void)
 	currentlayer++;
 	if (currentlayer >= numlayers)
 		currentlayer = 0;
-	if (debug) printdbg("Cycling to layer %d\n", currentlayer);
+	if (debug)
+		printdbg("Cycling to layer %d\n", currentlayer);
 	setlayer();
 	updatekeys();
 	drawkeyboard();
@@ -988,7 +1007,8 @@ togglelayer(void)
 	} else if (numlayers > 1) {
 		currentlayer = 1;
 	}
-	if (debug) printdbg("Toggling layer %d\n", currentlayer);
+	if (debug)
+		printdbg("Toggling layer %d\n", currentlayer);
 	setlayer();
 	updatekeys();
 	drawkeyboard();
@@ -997,7 +1017,8 @@ togglelayer(void)
 void
 showoverlay(int idx)
 {
-	if (debug) printdbg("Showing overlay %d\n", idx);
+	if (debug)
+		printdbg("Showing overlay %d\n", idx);
 	int i,j;
 
 	/* unpress existing key (visually only) */
@@ -1034,7 +1055,8 @@ showoverlay(int idx)
 void
 hideoverlay(void)
 {
-	if (debug) printdbg("Hiding overlay, overlay was #%d\n", currentoverlay);
+	if (debug)
+		printdbg("Hiding overlay, overlay was #%d\n", currentoverlay);
 	currentoverlay = -1;
 	overlaykeysym = 0;
 	currentlayer--;
@@ -1046,7 +1068,8 @@ sigterm(int signo)
 {
 	running = False;
 	sigtermd = True;
-	if (debug) printdbg("SIGTERM received\n");
+	if (debug)
+		printdbg("SIGTERM received\n");
 }
 
 void
