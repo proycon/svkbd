@@ -309,7 +309,6 @@ void
 drawkey(Key *k)
 {
 	int x, y, w, h;
-	int x2, y2, w2, h2;
 	const char *l;
 
 	int use_scheme = SchemeNorm;
