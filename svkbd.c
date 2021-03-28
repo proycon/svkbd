@@ -11,7 +11,6 @@
 #include <time.h>
 #include <unistd.h>
 #include <ctype.h>
-#include <err.h>
 
 #include <X11/keysym.h>
 #include <X11/keysymdef.h>
@@ -85,8 +84,6 @@ static void togglelayer();
 static void unpress(Key *k, KeySym mod);
 static void updatekeys();
 static void printkey(Key *k, KeySym mod);
-static char *estrdup(const char *str);
-
 
 /* variables */
 static int screen;
@@ -137,12 +134,6 @@ Bool sigtermd = False;
 
 static Key keys[KEYS] = { NULL };
 static Key* layers[LAYERS];
-
-char * estrdup(const char *str) {
-	char * tmp = strdup(str);
-	if (tmp == NULL) errx(1, "strdup failed");
-	return tmp;
-}
 
 void
 motionnotify(XEvent *e)

@@ -16,6 +16,16 @@ ecalloc(size_t nmemb, size_t size)
 	return p;
 }
 
+char *
+estrdup(const char *s)
+{
+	char *p;
+
+	if (!(p = strdup(s)))
+		die("strdup:");
+	return p;
+}
+
 void
 die(const char *fmt, ...)
 {
