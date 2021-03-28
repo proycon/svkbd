@@ -1151,12 +1151,11 @@ main(int argc, char *argv[])
 			die("svkbd-"VERSION);
 		} else if (!strcmp(argv[i], "-d")) {
 			isdock = True;
-			continue;
 		} else if (!strncmp(argv[i], "-g", 2)) {
 			if (i >= argc - 1)
-				continue;
+				usage(argv[0]);
 
-			bitm = XParseGeometry(argv[i + 1], &xr, &yr, &wr, &hr);
+			bitm = XParseGeometry(argv[++i], &xr, &yr, &wr, &hr);
 			if (bitm & XValue)
 				wx = xr;
 			if (bitm & YValue)
@@ -1169,8 +1168,9 @@ main(int argc, char *argv[])
 				wx = -1;
 			if (bitm & YNegative && wy == 0)
 				wy = -1;
-			i++;
 		} else if (!strcmp(argv[i], "-fn")) { /* font or font set */
+			if (i >= argc - 1)
+				usage(argv[0]);
 			fonts[0] = estrdup(argv[++i]);
 		} else if (!strcmp(argv[i], "-D")) {
 			debug = 1;
@@ -1186,19 +1186,20 @@ main(int argc, char *argv[])
 			pressonrelease = 0;
 		} else if (!strcmp(argv[i], "-l")) {
 			if (i >= argc - 1)
-				continue;
+				usage(argv[0]);
 			free(layer_names_list);
 			layer_names_list = estrdup(argv[++i]);
 		} else if (!strcmp(argv[i], "-s")) {
 			if (i >= argc - 1)
-				continue;
+				usage(argv[0]);
 			initial_layer_name = argv[++i];
 		} else if (!strcmp(argv[i], "-H")) {
 			if (i >= argc - 1)
-				continue;
+				usage(argv[0]);
 			heightfactor = atoi(argv[++i]);
 		} else {
 			fprintf(stderr, "Invalid argument: %s\n", argv[i]);
+			usage(argv[0]);
 			exit(2);
 		}
 	}
