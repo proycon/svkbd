@@ -1200,7 +1200,6 @@ main(int argc, char *argv[])
 		} else {
 			fprintf(stderr, "Invalid argument: %s\n", argv[i]);
 			usage(argv[0]);
-			exit(2);
 		}
 	}
 
