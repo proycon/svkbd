@@ -477,9 +477,10 @@ tmp_remap(KeySym keysym)
 
 void
 printkey(Key *k, KeySym mod) {
+	int i;
 	int shift = (mod == XK_Shift_L) || (mod == XK_Shift_R) || (mod == XK_Shift_Lock);
 	if (!shift) {
-		for (int i = 0; i < numkeys; i++) {
+		for (i = 0; i < numkeys; i++) {
 			if ((keys[i].pressed) && ((keys[i].keysym == XK_Shift_L) || (keys[i].keysym == XK_Shift_R) || (keys[i].keysym == XK_Shift_Lock))) {
 				shift = True;
 				break;
