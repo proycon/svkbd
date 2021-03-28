@@ -398,9 +398,9 @@ hasoverlay(KeySym keysym)
 	begin = 0;
 	for (i = 0; i < OVERLAYS; i++) {
 		if (overlay[i].keysym == XK_Cancel) {
-			begin = i+1;
+			begin = i + 1;
 		} else if (overlay[i].keysym == keysym) {
-			return begin+1;
+			return begin + 1;
 		}
 	}
 	return -1;
@@ -492,7 +492,8 @@ printkey(Key *k, KeySym mod)
 	printdbg("Printing key %ld (shift=%d)\n", k->keysym, shift);
 	if (k->keysym == XK_Cancel)
 		return;
-	KeySym * keysym = &(k->keysym);
+
+	KeySym *keysym = &(k->keysym);
 	XIM xim = XOpenIM(dpy, 0, 0, 0);
 	XIC xic = XCreateIC(xim, XNInputStyle, XIMPreeditNothing | XIMStatusNothing, NULL);
 
@@ -519,8 +520,12 @@ printkey(Key *k, KeySym mod)
 void
 simulate_keypress(KeySym keysym)
 {
-	if (!simulateoutput) return;
-	KeyCode code = XKeysymToKeycode(dpy, keysym);
+	KeyCode code;
+
+	if (!simulateoutput)
+		return;
+
+	code = XKeysymToKeycode(dpy, keysym);
 	if (code == 0)
 		code = tmp_remap(keysym);
 	XTestFakeKeyEvent(dpy, code, True, 0);
@@ -529,8 +534,12 @@ simulate_keypress(KeySym keysym)
 void
 simulate_keyrelease(KeySym keysym)
 {
-	if (!simulateoutput) return;
-	KeyCode code = XKeysymToKeycode(dpy, keysym);
+	KeyCode code;
+
+	if (!simulateoutput)
+		return;
+
+	code = XKeysymToKeycode(dpy, keysym);
 	if (code == 0)
 		code = tmp_remap(keysym);
 	XTestFakeKeyEvent(dpy, code, False, 0);
@@ -1072,7 +1081,7 @@ init_layers(char *layer_names_list, const char *initial_layer_name)
 	} else {
 		s = strtok(layer_names_list, ",");
 		while (s != NULL) {
-			if (numlayers+1 > LAYERS)
+			if (numlayers + 1 > LAYERS)
 				die("too many layers specified");
 			found = 0;
 			for (j = 0; j < LAYERS; j++) {
