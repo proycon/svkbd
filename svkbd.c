@@ -966,8 +966,9 @@ usage(char *argv0)
 	fprintf(stderr, "  -o         - Print to standard output\n");
 	fprintf(stderr, "  -l         - Comma separated list of layers to enable\n");
 	fprintf(stderr, "  -s         - Layer to select on program start\n");
-	fprintf(stderr, "  -H [int]   - Height fraction, one key row takes 1/x of the screen height");
+	fprintf(stderr, "  -H [int]   - Height fraction, one key row takes 1/x of the screen height\n");
 	fprintf(stderr, "  -fn [font] - Set font (Xft, e.g: DejaVu Sans:bold:size=20)\n");
+	fprintf(stderr, "  -g         - Set the window position or size using the X geometry format\n");
 	exit(1);
 }
 
