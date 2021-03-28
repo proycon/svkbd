@@ -1,8 +1,6 @@
-#define KEYS SMART_KEYS
+#define KEYS 43
 
-#define LAZY_KEYS 40
-
-static Key keys_lazy_en[LAZY_KEYS] = {
+static Key keys_lazy_en[KEYS] = {
 	{ 0, 0, XK_q, 1 },
 	{ 0, 0, XK_w, 1 },
 	{ 0, 0, XK_e, 1 },
@@ -29,27 +27,30 @@ static Key keys_lazy_en[LAZY_KEYS] = {
 
 	{ 0 },
 
-	{ "↑", 0, XK_Shift_L, 3 },
-	{ 0, 0, XK_z, 2 },
-	{ 0, 0, XK_x, 2 },
-	{ 0, 0, XK_c, 2 },
-	{ 0, 0, XK_v, 2 },
-	{ 0, 0, XK_b, 2 },
-	{ 0, 0, XK_n, 2 },
-	{ 0, 0, XK_m, 2 },
-	{ "⌫", 0, XK_BackSpace, 3 },
+	{ "↑", 0, XK_Shift_L, 1 },
+	{ 0, 0, XK_z, 1 },
+	{ 0, 0, XK_x, 1 },
+	{ 0, 0, XK_c, 1 },
+	{ 0, 0, XK_v, 1 },
+	{ 0, 0, XK_b, 1 },
+	{ 0, 0, XK_n, 1 },
+	{ 0, 0, XK_m, 1 },
+	{ "Tab", 0, XK_Tab, 1 },
+	{ "⌫", 0, XK_BackSpace, 1 },
 
 	{ 0 },
 
 	{ "?123", 0, XK_Cancel, 3 },
 	{ "-", 0, XK_minus, 2 },
 	{ "☺", 0, 0x101f642, 2 },
-	{ "", 0, XK_space, 8 },
+	{ "Ctl", 0, XK_Control_L, 2 },
+	{ "Alt", 0, XK_Alt_L, 2 },
+	{ "", 0, XK_space, 4 },
 	{ ".", 0, XK_period, 2 },
 	{ "↲Enter", 0, XK_Return, 3 }
 };
 
-static Key keys_symbols[LAZY_KEYS] = {
+static Key keys_symbols[KEYS] = {
 	{ "1", 0, XK_1, 1 },
 	{ "2", 0, XK_2, 1 },
 	{ "3", 0, XK_3, 1 },
@@ -76,29 +77,30 @@ static Key keys_symbols[LAZY_KEYS] = {
 
 	{ 0 },
 
-	{ "↑", 0, XK_Shift_L, 3 },
-	{ "~", 0, XK_grave, 2, XK_Shift_L },
-	{ "\\", 0, XK_backslash, 2 },
-	{ "|", 0, XK_backslash, 2, XK_Shift_L },
-	{ "←", 0, XK_Left, 2 },
-	{ "↓", 0, XK_Down, 2 },
-	{ "↑", 0, XK_Up, 2 },
-	{ "→", 0, XK_Right, 2 },
-	{ "⌫", 0, XK_BackSpace, 3 },
+	{ "Esc", 0, XK_Escape, 1 },
+	{ "~", 0, XK_grave, 1, XK_Shift_L },
+	{ "\\", 0, XK_backslash, 1 },
+	{ "|", 0, XK_backslash, 1, XK_Shift_L },
+	{ "←", 0, XK_Left, 1 },
+	{ "↓", 0, XK_Down, 1 },
+	{ "↑", 0, XK_Up, 1 },
+	{ "→", 0, XK_Right, 1 },
+	{ "Tab", 0, XK_Tab, 1 },
+	{ "⌫", 0, XK_BackSpace, 1 },
 
 	{ 0 },
 
 	{ "abc", 0, XK_Mode_switch, 3 },
 	{ "-", 0, XK_minus, 2 },
 	{ "↺", 0, XK_Cancel, 2 },
-	{ "", 0, XK_space, 8 },
+	{ "Ctl", 0, XK_Control_L, 2 },
+	{ "Alt", 0, XK_Alt_L, 2 },
+	{ "", 0, XK_space, 4 },
 	{ ".", 0, XK_period, 2 },
 	{ "↲Enter", 0, XK_Return, 3 }
 };
 
-#define SMART_KEYS 43
-
-static Key keys_functions[SMART_KEYS] = {
+static Key keys_functions[KEYS] = {
 	{ "Esc", 0, XK_Escape, 1 },
 	{ "F1", 0, XK_F1, 1 },
 	{ "F2", 0, XK_F2, 1 },
@@ -135,58 +137,6 @@ static Key keys_functions[SMART_KEYS] = {
 	{ "⇥", 0, XK_End, 1 },
 	{ "⇊", 0, XK_Next, 1 },
 	{ "⇈", 0, XK_Prior, 1 },
-	{ "Tab", 0, XK_Tab, 1 },
-	{ "⌫", 0, XK_BackSpace, 2 },
-
-	{ 0 },
-
-	{ "↺", 0, XK_Cancel, 1},
-	{ "Shift", 0, XK_Shift_L, 2 },
-	{ "Ctrl", 0, XK_Control_L, 1 },
-	{ "Alt", 0, XK_Alt_L, 1 },
-	{ "", 0, XK_space, 2 },
-	{ "↓", 0, XK_Down, 1 },
-	{ "↑", 0, XK_Up, 1 },
-	{ "↲ Enter", 0, XK_Return, 2 },
-};
-
-static Key keys_smart_en[SMART_KEYS] = {
-	{ "Esc", 0, XK_Escape, 1 },
-	{ 0, 0, XK_q, 1 },
-	{ 0, 0, XK_w, 1 },
-	{ 0, 0, XK_e, 1 },
-	{ 0, 0, XK_r, 1 },
-	{ 0, 0, XK_t, 1 },
-	{ 0, 0, XK_y, 1 },
-	{ 0, 0, XK_u, 1 },
-	{ 0, 0, XK_i, 1 },
-	{ 0, 0, XK_o, 1 },
-	{ 0, 0, XK_p, 1 },
-
-	{ 0 },
-
-	{ "'\"", 0, XK_apostrophe, 1 },
-	{ 0, 0, XK_a, 1 },
-	{ 0, 0, XK_s, 1 },
-	{ 0, 0, XK_d, 1 },
-	{ 0, 0, XK_f, 1 },
-	{ 0, 0, XK_g, 1 },
-	{ 0, 0, XK_h, 1 },
-	{ 0, 0, XK_j, 1 },
-	{ 0, 0, XK_k, 1 },
-	{ 0, 0, XK_l, 1 },
-	{ "/?", 0, XK_slash, 1 },
-
-	{ 0 },
-
-	{ "abc", 0, XK_Mode_switch, 1 },
-	{ 0, 0, XK_z, 1 },
-	{ 0, 0, XK_x, 1 },
-	{ 0, 0, XK_c, 1 },
-	{ 0, 0, XK_v, 1 },
-	{ 0, 0, XK_b, 1 },
-	{ 0, 0, XK_n, 1 },
-	{ 0, 0, XK_m, 1 },
 	{ "Tab", 0, XK_Tab, 1 },
 	{ "⌫", 0, XK_BackSpace, 2 },
 
@@ -465,12 +415,11 @@ static Key overlay[OVERLAYS] = {
 	{ 0, 0, XK_Cancel },
 };
 
-#define LAYERS 5
+#define LAYERS 4
 
 static char* layer_names[LAYERS] = {
 	"lazy en",
 	"symbols",
-	"smart en",
 	"functions",
 	"dialer",
 };
@@ -478,7 +427,6 @@ static char* layer_names[LAYERS] = {
 static Key* available_layers[LAYERS] = {
 	keys_lazy_en,
 	keys_symbols,
-	keys_smart_en,
 	keys_functions,
 	keys_dialer,
 };
