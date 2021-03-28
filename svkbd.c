@@ -2,15 +2,15 @@
 #include <sys/select.h>
 #include <sys/time.h>
 
+#include <ctype.h>
 #include <locale.h>
 #include <signal.h>
 #include <stdarg.h>
 #include <stdio.h>
-#include <string.h>
 #include <stdlib.h>
+#include <string.h>
 #include <time.h>
 #include <unistd.h>
-#include <ctype.h>
 
 #include <X11/keysym.h>
 #include <X11/keysymdef.h>
@@ -31,11 +31,15 @@
 
 /* macros */
 #define LENGTH(x)         (sizeof x / sizeof x[0])
-#define TEXTW(X)          (drw_fontset_getwidth(drw, (X)))
 #define STRINGTOKEYSYM(X) (XStringToKeySym(X))
+#define TEXTW(X)          (drw_fontset_getwidth(drw, (X)))
 
 /* enums */
-enum { SchemeNorm, SchemeNormABC, SchemeNormABCShift, SchemeNormShift, SchemePress, SchemePressShift, SchemeHighlight, SchemeHighlightShift, SchemeOverlay, SchemeOverlayShift, SchemeLast };
+enum {
+	SchemeNorm, SchemeNormABC, SchemeNormABCShift, SchemeNormShift, SchemePress,
+	SchemePressShift, SchemeHighlight, SchemeHighlightShift, SchemeOverlay,
+	SchemeOverlayShift, SchemeLast
+};
 enum { NetWMWindowType, NetLast };
 
 /* typedefs */
@@ -118,7 +122,7 @@ static int numlayers = 0;
 static int numkeys = 0;
 
 static char *colors[10][2]; /* 10 schemes, 2 colors each */
-static char *fonts[] = {0};
+static char *fonts[] = { 0 };
 
 static KeySym ispressingkeysym;
 
@@ -717,56 +721,55 @@ readxresources(void)
 		if (XrmGetResource(xdb, "svkbd.font", "*", &type, &xval) && !fonts[0])
 			fonts[0] = estrdup(xval.addr);
 
-		if (XrmGetResource(xdb, "svkbd.background", "*", &type, &xval) && !colors[SchemeNorm][ColBg] )
+		if (XrmGetResource(xdb, "svkbd.background", "*", &type, &xval) && !colors[SchemeNorm][ColBg])
 			colors[SchemeNorm][ColBg] = estrdup(xval.addr);
-		if (XrmGetResource(xdb, "svkbd.foreground", "*", &type, &xval) && !colors[SchemeNorm][ColFg] )
+		if (XrmGetResource(xdb, "svkbd.foreground", "*", &type, &xval) && !colors[SchemeNorm][ColFg])
 			colors[SchemeNorm][ColFg] = estrdup(xval.addr);
 
-		if (XrmGetResource(xdb, "svkbd.shiftforeground", "*", &type, &xval) && !colors[SchemeNormShift][ColFg] )
+		if (XrmGetResource(xdb, "svkbd.shiftforeground", "*", &type, &xval) && !colors[SchemeNormShift][ColFg])
 			colors[SchemeNormShift][ColFg] = estrdup(xval.addr);
-		if (XrmGetResource(xdb, "svkbd.shiftbackground", "*", &type, &xval) && !colors[SchemeNormShift][ColBg] )
+		if (XrmGetResource(xdb, "svkbd.shiftbackground", "*", &type, &xval) && !colors[SchemeNormShift][ColBg])
 			colors[SchemeNormShift][ColBg] = estrdup(xval.addr);
 
-		if (XrmGetResource(xdb, "svkbd.ABCforeground", "*", &type, &xval) && !colors[SchemeNormABC][ColFg] )
+		if (XrmGetResource(xdb, "svkbd.ABCforeground", "*", &type, &xval) && !colors[SchemeNormABC][ColFg])
 			colors[SchemeNormABC][ColFg] = estrdup(xval.addr);
-		if (XrmGetResource(xdb, "svkbd.ABCbackground", "*", &type, &xval) && !colors[SchemeNormABC][ColBg] )
+		if (XrmGetResource(xdb, "svkbd.ABCbackground", "*", &type, &xval) && !colors[SchemeNormABC][ColBg])
 			colors[SchemeNormABC][ColBg] = estrdup(xval.addr);
 
-		if (XrmGetResource(xdb, "svkbd.ABCshiftforeground", "*", &type, &xval) && !colors[SchemeNormShift][ColFg] )
+		if (XrmGetResource(xdb, "svkbd.ABCshiftforeground", "*", &type, &xval) && !colors[SchemeNormShift][ColFg])
 			colors[SchemeNormShift][ColFg] = estrdup(xval.addr);
-		if (XrmGetResource(xdb, "svkbd.ABCshiftbackground", "*", &type, &xval) && !colors[SchemeNormShift][ColBg] )
+		if (XrmGetResource(xdb, "svkbd.ABCshiftbackground", "*", &type, &xval) && !colors[SchemeNormShift][ColBg])
 			colors[SchemeNormShift][ColBg] = estrdup(xval.addr);
 
-		if (XrmGetResource(xdb, "svkbd.pressbackground", "*", &type, &xval) && !colors[SchemePress][ColBg] )
+		if (XrmGetResource(xdb, "svkbd.pressbackground", "*", &type, &xval) && !colors[SchemePress][ColBg])
 			colors[SchemePress][ColBg] = estrdup(xval.addr);
-		if (XrmGetResource(xdb, "svkbd.pressforeground", "*", &type, &xval) && !colors[SchemePress][ColFg] )
+		if (XrmGetResource(xdb, "svkbd.pressforeground", "*", &type, &xval) && !colors[SchemePress][ColFg])
 			colors[SchemePress][ColFg] = estrdup(xval.addr);
 
-		if (XrmGetResource(xdb, "svkbd.pressshiftbackground", "*", &type, &xval) && !colors[SchemePressShift][ColBg] )
+		if (XrmGetResource(xdb, "svkbd.pressshiftbackground", "*", &type, &xval) && !colors[SchemePressShift][ColBg])
 			colors[SchemePressShift][ColBg] = estrdup(xval.addr);
-		if (XrmGetResource(xdb, "svkbd.pressshiftforeground", "*", &type, &xval) && !colors[SchemePressShift][ColFg] )
+		if (XrmGetResource(xdb, "svkbd.pressshiftforeground", "*", &type, &xval) && !colors[SchemePressShift][ColFg])
 			colors[SchemePressShift][ColFg] = estrdup(xval.addr);
 
-		if (XrmGetResource(xdb, "svkbd.highlightbackground", "*", &type, &xval) && !colors[SchemeHighlight][ColBg] )
+		if (XrmGetResource(xdb, "svkbd.highlightbackground", "*", &type, &xval) && !colors[SchemeHighlight][ColBg])
 			colors[SchemeHighlight][ColBg] = estrdup(xval.addr);
-		if (XrmGetResource(xdb, "svkbd.highlightforeground", "*", &type, &xval) && !colors[SchemeHighlight][ColFg] )
+		if (XrmGetResource(xdb, "svkbd.highlightforeground", "*", &type, &xval) && !colors[SchemeHighlight][ColFg])
 			colors[SchemeHighlight][ColFg] = estrdup(xval.addr);
 
-		if (XrmGetResource(xdb, "svkbd.highlightshiftbackground", "*", &type, &xval) && !colors[SchemeHighlightShift][ColBg] )
+		if (XrmGetResource(xdb, "svkbd.highlightshiftbackground", "*", &type, &xval) && !colors[SchemeHighlightShift][ColBg])
 			colors[SchemeHighlightShift][ColBg] = estrdup(xval.addr);
-		if (XrmGetResource(xdb, "svkbd.highlightshiftforeground", "*", &type, &xval) && !colors[SchemeHighlightShift][ColFg] )
+		if (XrmGetResource(xdb, "svkbd.highlightshiftforeground", "*", &type, &xval) && !colors[SchemeHighlightShift][ColFg])
 			colors[SchemeHighlightShift][ColFg] = estrdup(xval.addr);
 
-		if (XrmGetResource(xdb, "svkbd.overlaybackground", "*", &type, &xval) && !colors[SchemeOverlay][ColBg] )
+		if (XrmGetResource(xdb, "svkbd.overlaybackground", "*", &type, &xval) && !colors[SchemeOverlay][ColBg])
 			colors[SchemeOverlay][ColBg] = estrdup(xval.addr);
-		if (XrmGetResource(xdb, "svkbd.overlayforeground", "*", &type, &xval) && !colors[SchemeOverlay][ColFg] )
+		if (XrmGetResource(xdb, "svkbd.overlayforeground", "*", &type, &xval) && !colors[SchemeOverlay][ColFg])
 			colors[SchemeOverlay][ColFg] = estrdup(xval.addr);
 
-		if (XrmGetResource(xdb, "svkbd.overlayshiftbackground", "*", &type, &xval) && !colors[SchemeOverlayShift][ColBg] )
+		if (XrmGetResource(xdb, "svkbd.overlayshiftbackground", "*", &type, &xval) && !colors[SchemeOverlayShift][ColBg])
 			colors[SchemeOverlayShift][ColBg] = estrdup(xval.addr);
-		if (XrmGetResource(xdb, "svkbd.overlayshiftforeground", "*", &type, &xval) && !colors[SchemeOverlayShift][ColFg] )
+		if (XrmGetResource(xdb, "svkbd.overlayshiftforeground", "*", &type, &xval) && !colors[SchemeOverlayShift][ColFg])
 			colors[SchemeOverlayShift][ColFg] = estrdup(xval.addr);
-
 
 		XrmDestroyDatabase(xdb);
 	}
