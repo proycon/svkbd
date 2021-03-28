@@ -1204,7 +1204,7 @@ main(int argc, char *argv[])
 	}
 
 	if (printoutput)
-		setbuf(stdout, NULL); //unbuffered output
+		setbuf(stdout, NULL); /* unbuffered output */
 
 	if (heightfactor <= 0)
 		die("height factor must be a positive integer");
