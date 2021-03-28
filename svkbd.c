@@ -507,7 +507,7 @@ printkey(Key *k, KeySym mod)
 	char buffer[32];
 	KeySym ignore;
 	Status return_status;
-	int l = Xutf8LookupString(xic, &event, buffer, 32, &ignore, &return_status);
+	int l = Xutf8LookupString(xic, &event, buffer, sizeof(buffer), &ignore, &return_status);
 	buffer[l] = '\0';
 	printdbg("Print buffer: [%s] (length=%d)\n", &buffer, l);
 	printf("%s", buffer);
