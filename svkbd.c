@@ -718,9 +718,7 @@ readxresources(void)
 	XrmInitialize();
 
 	if ((xrm = XResourceManagerString(drw->dpy))) {
-
 		xdb = XrmGetStringDatabase(xrm);
-
 
 		if (XrmGetResource(xdb, "svkbd.font", "*", &type, &xval) && !fonts[0])
 			fonts[0] = estrdup(xval.addr);
@@ -1144,10 +1142,8 @@ main(int argc, char *argv[])
 		if ((tmp = getenv("SVKBD_ENABLEOVERLAYS")))
 			enableoverlays = atoi(tmp);
 	}
-	if ((tmp = getenv("SVKBD_LAYERS"))) {
-		if (!(layer_names_list = estrdup(tmp)))
-			die("memory allocation error");
-	}
+	if ((tmp = getenv("SVKBD_LAYERS")))
+		layer_names_list = estrdup(tmp);
 
 	if ((tmp = getenv("SVKBD_HEIGHTFACTOR")))
 		heightfactor = atoi(tmp);
@@ -1198,8 +1194,7 @@ main(int argc, char *argv[])
 			if (i >= argc - 1)
 				continue;
 			free(layer_names_list);
-			if (!(layer_names_list = estrdup(argv[++i])))
-				die("memory allocation error");
+			layer_names_list = estrdup(argv[++i]);
 		} else if (!strcmp(argv[i], "-s")) {
 			if (i >= argc - 1)
 				continue;
