@@ -136,8 +136,8 @@ Bool sigtermd = False;
 #endif
 #include LAYOUT
 
-static Key keys[KEYS] = { NULL };
-static Key* layers[LAYERS];
+static Key keys[KEYS];
+static Key *layers[LAYERS];
 
 void
 motionnotify(XEvent *e)
