@@ -955,7 +955,7 @@ updatekeys(void)
 		for (x = 0; i < numkeys && keys[i].keysym != 0; i++) {
 			keys[i].x = x;
 			keys[i].y = y;
-			keys[i].w = keys[i].width * (ww - 1) / base;
+			keys[i].w = keys[i].width * ww / base;
 			keys[i].h = r == 1 ? wh - y - 1 : h;
 			x += keys[i].w;
 		}
