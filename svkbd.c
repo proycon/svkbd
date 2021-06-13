@@ -198,15 +198,18 @@ buttonpress(XEvent *e)
 	if (!(k = findkey(ev->x, ev->y)))
 		return;
 
-	if (k->modifier) {
-		mod = k->modifier;
-	} else {
-		for (i = 0; i < LENGTH(buttonmods); i++) {
-			if (ev->button == buttonmods[i].button) {
-				mod = buttonmods[i].mod;
-				break;
-			}
+	for (i = 0; i < LENGTH(buttonmods); i++) {
+		if (ev->button == buttonmods[i].button) {
+			mod = buttonmods[i].mod;
+			break;
 		}
+	}
+
+	if (k->modifier) {
+		if (mod == k->modifier)
+			mod = 0;
+		else
+			mod = k->modifier;
 	}
 	press(k, mod);
 }
@@ -231,7 +234,9 @@ buttonrelease(XEvent *e)
 	if (ev->x < 0 || ev->y < 0) {
 		unpress(NULL, mod);
 	} else if ((k = findkey(ev->x, ev->y))) {
-		if (k->modifier)
+		if (k->modifier == mod)
+			unpress(k, 0);
+		else if (k->modifier)
 			unpress(k, k->modifier);
 		else
 			unpress(k, mod);
@@ -564,6 +569,7 @@ void
 unpress(Key *k, KeySym buttonmod)
 {
 	int i;
+	Bool neutralizebuttonmod = False;
 
 	if (k != NULL) {
 		switch(k->keysym) {
@@ -589,10 +595,13 @@ unpress(Key *k, KeySym buttonmod)
 		/* simulate the press event, as we postponed it earlier in press() */
 		for (i = 0; i < numkeys; i++) {
 			if (keys[i].pressed && IsModifierKey(keys[i].keysym)) {
-				simulate_keypress(keys[i].keysym);
+				if (keys[i].keysym == buttonmod)
+					neutralizebuttonmod = True;
+				else
+					simulate_keypress(keys[i].keysym);
 			}
 		}
-		if (buttonmod) {
+		if (buttonmod && !neutralizebuttonmod) {
 			simulate_keypress(buttonmod);
 		}
 		simulate_keypress(k->keysym);
@@ -615,14 +624,15 @@ unpress(Key *k, KeySym buttonmod)
 		}
 	}
 
-	if (buttonmod) {
+	if (buttonmod && !neutralizebuttonmod) {
 		simulate_keyrelease(buttonmod);
 	}
 
 	if ((k == NULL) || (!IsModifierKey(k->keysym))) {
 		for (i = 0; i < numkeys; i++) {
 			if (keys[i].pressed && IsModifierKey(keys[i].keysym)) {
-				simulate_keyrelease(keys[i].keysym);
+				if (!(keys[i].keysym == buttonmod && neutralizebuttonmod))
+					simulate_keyrelease(keys[i].keysym);
 				keys[i].pressed = 0;
 				drawkey(&keys[i]);
 			}
