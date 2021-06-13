@@ -38,7 +38,7 @@
 enum {
 	SchemeNorm, SchemeNormABC, SchemeNormABCShift, SchemeNormShift, SchemePress,
 	SchemePressShift, SchemeHighlight, SchemeHighlightShift, SchemeOverlay,
-	SchemeOverlayShift, SchemeLast
+	SchemeOverlayShift, SchemeWindow, SchemeLast
 };
 enum { NetWMWindowType, NetLast };
 
@@ -70,7 +70,7 @@ static void configurenotify(XEvent *e);
 static void countrows();
 static int countkeys(Key *layer);
 static void drawkeyboard(void);
-static void drawkey(Key *k);
+static void drawkey(Key *k, Bool map);
 static void expose(XEvent *e);
 static Key *findkey(int x, int y);
 static void leavenotify(XEvent *e);
@@ -121,7 +121,7 @@ static int debug = 0;
 static int numlayers = 0;
 static int numkeys = 0;
 
-static char *colors[10][2]; /* 10 schemes, 2 colors each */
+static char *colors[11][2]; /* 11 schemes, 2 colors each */
 static char *fonts[] = { 0 };
 
 static KeySym ispressingkeysym;
@@ -158,12 +158,12 @@ motionnotify(XEvent *e)
 				} else {
 					keys[i].highlighted = True;
 				}
-				drawkey(&keys[i]);
+				drawkey(&keys[i], True);
 			}
 			continue;
 		} else if (keys[i].highlighted == True) {
 			keys[i].highlighted = False;
-			drawkey(&keys[i]);
+			drawkey(&keys[i], True);
 		}
 	}
 
@@ -173,7 +173,7 @@ motionnotify(XEvent *e)
 			lostfocus = i;
 			ispressingkeysym = 0;
 			keys[i].pressed = 0;
-			drawkey(&keys[i]);
+			drawkey(&keys[i], True);
 		}
 	}
 
@@ -309,18 +309,17 @@ drawkeyboard(void)
 	int i;
 	int row = 0;
 
-	drw_setscheme(drw, scheme[SchemeNorm]);
+	drw_setscheme(drw, scheme[SchemeWindow]);
 	drw_rect(drw, 0, 0, ww, wh, 1, 1);
-	drw_map(drw, win, 0, 0, ww, wh);
 	for (i = 0; i < numkeys; i++) {
 		if (keys[i].keysym != 0)
-			drawkey(&keys[i]);
+			drawkey(&keys[i], False);
 	}
 	drw_map(drw, win, 0, 0, ww, wh);
 }
 
 void
-drawkey(Key *k)
+drawkey(Key *k, Bool map)
 {
 	int x, y, w, h;
 	const char *l;
@@ -377,7 +376,8 @@ drawkey(Key *k)
 		w = TEXTW(l);
 		drw_text(drw, x, y, w, h, 0, l, 0);
 	}
-	drw_map(drw, win, k->x, k->y, k->w, k->h);
+	if (map)
+		drw_map(drw, win, k->x, k->y, k->w, k->h);
 }
 
 void
@@ -475,7 +475,7 @@ press(Key *k, KeySym buttonmod)
 			}
 		}
 	}
-	drawkey(k);
+	drawkey(k, True);
 }
 
 int
@@ -625,7 +625,7 @@ unpress(Key *k, KeySym buttonmod)
 			if (printoutput)
 				printkey(&keys[i], buttonmod);
 			keys[i].pressed = 0;
-			drawkey(&keys[i]);
+			drawkey(&keys[i], True);
 		}
 	}
 
@@ -639,7 +639,7 @@ unpress(Key *k, KeySym buttonmod)
 				if (!(keys[i].keysym == buttonmod && neutralizebuttonmod))
 					simulate_keyrelease(keys[i].keysym);
 				keys[i].pressed = 0;
-				drawkey(&keys[i]);
+				drawkey(&keys[i], True);
 			}
 		}
 	}
@@ -785,6 +785,11 @@ readxresources(void)
 			colors[SchemeOverlayShift][ColBg] = estrdup(xval.addr);
 		if (XrmGetResource(xdb, "svkbd.overlayshiftforeground", "*", &type, &xval) && !colors[SchemeOverlayShift][ColFg])
 			colors[SchemeOverlayShift][ColFg] = estrdup(xval.addr);
+
+		if (XrmGetResource(xdb, "svkbd.windowbackground", "*", &type, &xval) && !colors[SchemeWindow][ColBg])
+			colors[SchemeWindow][ColBg] = estrdup(xval.addr);
+		if (XrmGetResource(xdb, "svkbd.windowforeground", "*", &type, &xval) && !colors[SchemeWindow][ColFg])
+			colors[SchemeWindow][ColFg] = estrdup(xval.addr);
 
 		XrmDestroyDatabase(xdb);
 	}
@@ -1037,7 +1042,7 @@ showoverlay(int idx)
 	for (i = 0; i < numkeys; i++) {
 		if (keys[i].pressed && !IsModifierKey(keys[i].keysym)) {
 			keys[i].pressed = 0;
-			drawkey(&keys[i]);
+			drawkey(&keys[i], True);
 			break;
 		}
 	}
