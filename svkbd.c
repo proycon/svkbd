@@ -47,7 +47,7 @@ typedef struct {
 	char *label;
 	char *label2;
 	KeySym keysym;
-	unsigned int width;
+	double width;
 	KeySym modifier;
 	int x, y, w, h;
 	Bool pressed;
@@ -307,11 +307,16 @@ void
 drawkeyboard(void)
 {
 	int i;
+	int row = 0;
 
+	drw_setscheme(drw, scheme[SchemeNorm]);
+	drw_rect(drw, 0, 0, ww, wh, 1, 1);
+	drw_map(drw, win, 0, 0, ww, wh);
 	for (i = 0; i < numkeys; i++) {
 		if (keys[i].keysym != 0)
 			drawkey(&keys[i]);
 	}
+	drw_map(drw, win, 0, 0, ww, wh);
 }
 
 void
@@ -946,18 +951,21 @@ void
 updatekeys(void)
 {
 	int i, j;
-	int x = 0, y = 0, h, base, r = rows;
+	double base;
+	int x = 0, y = 0, h, r = rows;
 
 	h = (wh - 1) / rows;
 	for (i = 0; i < numkeys; i++, r--) {
 		for (j = i, base = 0; j < numkeys && keys[j].keysym != 0; j++)
 			base += keys[j].width;
 		for (x = 0; i < numkeys && keys[i].keysym != 0; i++) {
-			keys[i].x = x;
-			keys[i].y = y;
+			keys[i].x = x + xspacing;
+			keys[i].y = y + yspacing;
 			keys[i].w = keys[i].width * ww / base;
 			keys[i].h = r == 1 ? wh - y - 1 : h;
 			x += keys[i].w;
+			keys[i].w = keys[i].w - (xspacing * 2);
+			keys[i].h = keys[i].h - (yspacing * 2);
 		}
 		if (base != 0)
 			keys[i - 1].w = ww - 1 - keys[i - 1].x;
