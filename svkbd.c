@@ -307,7 +307,6 @@ void
 drawkeyboard(void)
 {
 	int i;
-	int row = 0;
 
 	drw_setscheme(drw, scheme[SchemeWindow]);
 	drw_rect(drw, 0, 0, ww, wh, 1, 1);
