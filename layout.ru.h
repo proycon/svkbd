@@ -72,7 +72,7 @@ Buttonmod buttonmods[] = {
 
 #define OVERLAYS 1
 static Key overlay[OVERLAYS] = {
-	{ 0, XK_Cancel },
+	{ 0, 0, XK_Cancel },
 };
 
 #define LAYERS 1

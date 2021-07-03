@@ -1,11 +1,11 @@
 #define KEYS 6
 static Key keys_arrows[] = {
-	{ 0, XK_Shift_L, 2 },
-	{ "←", XK_Left, 1 },
-	{ "↓", XK_Down, 1 },
-	{ "↑", XK_Up, 1 },
-	{ "→", XK_Right, 1},
-	{ "Alt", XK_Alt_L, 2 },
+	{ 0, 0, XK_Shift_L, 2 },
+	{ "←", 0, XK_Left, 1 },
+	{ "↓", 0, XK_Down, 1 },
+	{ "↑", 0, XK_Up, 1 },
+	{ "→", 0, XK_Right, 1},
+	{ "Alt", 0, XK_Alt_L, 2 },
 };
 
 Buttonmod buttonmods[] = {
@@ -15,7 +15,7 @@ Buttonmod buttonmods[] = {
 
 #define OVERLAYS 1
 static Key overlay[OVERLAYS] = {
-		{ 0, XK_Cancel },
+	{ 0, 0, XK_Cancel },
 };
 
 #define LAYERS 1
