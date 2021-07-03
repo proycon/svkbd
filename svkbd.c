@@ -643,7 +643,8 @@ unpress(Key *k, KeySym buttonmod)
 		}
 	}
 
-	if (enableoverlays && currentoverlay != -1 && !IsModifierKey(k->keysym)) {
+	if (enableoverlays && currentoverlay != -1 &&
+	    (k == NULL || !IsModifierKey(k->keysym))) {
 		if (releaseprotect) {
 			releaseprotect = 0;
 		} else {
