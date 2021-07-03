@@ -661,8 +661,8 @@ run(void)
 	int xfd;
 	fd_set fds;
 	struct timeval tv;
-	double duration = 0.0;
-	int overlayidx = -1;
+	double duration;
+	int overlayidx;
 	int i, r;
 
 	xfd = ConnectionNumber(dpy);
@@ -958,7 +958,7 @@ updatekeys(void)
 {
 	int i, j;
 	double base;
-	int x = 0, y = 0, h, r = rows;
+	int x, y = 0, h, r = rows;
 
 	h = (wh - 1) / rows;
 	for (i = 0; i < numkeys; i++, r--) {
