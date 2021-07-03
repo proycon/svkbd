@@ -494,8 +494,9 @@ static Key keys_navigation[KEYS] = {
 	{ "↓", 0, XK_Down, 1 },
 	{ "Tab", 0, XK_Tab, 1 },
 	{ "↲ Enter", 0, XK_Return, 1},
-  { 0 }, /* Last item (double 0) */
-  { 0 }, /* Last item (double 0) */
+
+	{ 0 }, /* Last item (double 0) */
+	{ 0 }, /* Last item (double 0) */
 };
 
 
@@ -615,8 +616,7 @@ static Key* available_layers[LAYERS] = {
 	keys_ru
 };
 
-
 Buttonmod buttonmods[] = {
-		{ XK_Shift_L, Button2 },
-		{ XK_Alt_L, Button3 },
+	{ XK_Shift_L, Button2 },
+	{ XK_Alt_L, Button3 },
 };

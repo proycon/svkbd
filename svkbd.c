@@ -74,7 +74,7 @@ static void drawkey(Key *k, Bool map);
 static void expose(XEvent *e);
 static Key *findkey(int x, int y);
 static void leavenotify(XEvent *e);
-static void press(Key *k, KeySym mod);
+static void press(Key *k, KeySym buttonmod);
 static double get_press_duration();
 static void run(void);
 static void setup(void);
@@ -85,7 +85,7 @@ static void hideoverlay();
 static void cyclelayer();
 static void setlayer();
 static void togglelayer();
-static void unpress(Key *k, KeySym mod);
+static void unpress(Key *k, KeySym buttonmod);
 static void updatekeys();
 static void printkey(Key *k, KeySym mod);
 
@@ -168,7 +168,8 @@ motionnotify(XEvent *e)
 	}
 
 	for (i = 0; i < numkeys; i++) {
-		if (!IsModifierKey(keys[i].keysym) && keys[i].pressed == True && lostfocus != gainedfocus) {
+		if (!IsModifierKey(keys[i].keysym) && keys[i].pressed == True &&
+		    lostfocus != gainedfocus) {
 			printdbg("Pressed key lost focus: %ld\n", keys[i].keysym);
 			lostfocus = i;
 			ispressingkeysym = 0;
@@ -575,7 +576,7 @@ unpress(Key *k, KeySym buttonmod)
 	int i;
 	Bool neutralizebuttonmod = False;
 
-	if (k != NULL) {
+	if (k) {
 		switch(k->keysym) {
 		case XK_Cancel:
 			cyclelayer();
@@ -632,7 +633,7 @@ unpress(Key *k, KeySym buttonmod)
 		simulate_keyrelease(buttonmod);
 	}
 
-	if ((k == NULL) || (!IsModifierKey(k->keysym))) {
+	if (k == NULL || !IsModifierKey(k->keysym)) {
 		for (i = 0; i < numkeys; i++) {
 			if (keys[i].pressed && IsModifierKey(keys[i].keysym)) {
 				if (!(keys[i].keysym == buttonmod && neutralizebuttonmod))
@@ -690,7 +691,7 @@ run(void)
 					printdbg("%f\n", duration);
 				overlayidx = hasoverlay(ispressingkeysym);
 				duration = get_press_duration();
-				if ((overlayidx != -1) && (duration >= overlay_delay)) {
+				if (overlayidx != -1 && duration >= overlay_delay) {
 					printdbg("press duration %f, activating overlay\n", duration);
 					showoverlay(overlayidx);
 					pressbegin.tv_sec = 0;
@@ -1047,7 +1048,7 @@ showoverlay(int idx)
 		}
 	}
 
-	for (i = idx, j=0; i < OVERLAYS; i++, j++) {
+	for (i = idx, j = 0; i < OVERLAYS; i++, j++) {
 		if (overlay[i].keysym == XK_Cancel) {
 			break;
 		}
