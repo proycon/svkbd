@@ -34,6 +34,7 @@ The following layouts are available:
         * a cyrillic layer (ЙЦУКЕН based); the э key is moved to an overlay on е
         * a dialer/numeric layer
         * an arrow layer
+        * a more minimal qwerty layer (bigger keys) for smaller screens/larger fingers.
     * ``mobile-plain`` - This is a plain layout with only a qwerty layer and numeric/punctuation layer. It was
         originally made for [sxmo](https://sr.ht/~mil/Sxmo/).
     * ``mobile-simple`` - This is a more minimalistic layout that is more similar to what Android and iOS offer.
@@ -60,15 +61,18 @@ some space of the screen being reserved for it.
 
 	$ svkbd-mobile-intl -g 400x200+1+1
 
-This will start svkbd-intl with a size of 400x200 and at the upper left
+This will start svkbd-mobile-intl with a size of 400x200 and at the upper left
 window corner.
 
 For layouts that consist of multiple layers, you can enable layers on program start through either the ``-l`` flag or
 through the ``SVKBD_LAYERS`` environment variable.  They both take a comma separated list of layer names (as defined in
-your ``layout.*.h``). Use the ``↺`` button in the bottom-left to cycle through all the layers.
+your ``layout.*.h``). Use the ``↺`` button in the bottom-left to cycle through all the layers in the exact order they
+were specified.
 
 Some layouts come with overlays that will show when certain keys are hold pressed for a longer time. For
-example, a long press on the ``a`` key will enable an overview showing all kinds of diacritic combinations for ``a``.
+example, a long press on the ``a`` key will enable an overview showing all kinds of diacritic combinations for ``a``. In
+the ``mobile-intl`` layout, a long press on a punctuation key will show an overlay with all further punctuation options
+(the same for all punctuation keys).
 
 Overlay functionality interferes with the ability to hold a key and have it outputted repeatedly.  You can disable
 overlay functionality with the ``-O`` flag or by setting the environment variable ``SVKBD_ENABLEOVERLAYS=0``. There is
