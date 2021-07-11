@@ -212,6 +212,7 @@ static Key overlay[OVERLAYS] = {
 	{ "ę", 0, XK_eogonek },
 	{ "ē", 0, XK_emacron },
 	{ "ė", 0, XK_eabovedot },
+	{ "ě", 0, XK_ecaron },
 	{ 0, 0, XK_Cancel },
 
 	{ 0, 0, XK_y },
