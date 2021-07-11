@@ -69,10 +69,11 @@ through the ``SVKBD_LAYERS`` environment variable.  They both take a comma separ
 your ``layout.*.h``). Use the ``↺`` button in the bottom-left to cycle through all the layers in the exact order they
 were specified.
 
-Some layouts come with overlays that will show when certain keys are hold pressed for a longer time. For
-example, a long press on the ``a`` key will enable an overview showing all kinds of diacritic combinations for ``a``. In
-the ``mobile-intl`` layout, a long press on a punctuation key will show an overlay with all further punctuation options
-(the same for all punctuation keys).
+Some layouts come with overlays that will show when certain keys are hold pressed for a longer time. For example, a long
+press on the ``a`` key will enable an overview showing all kinds of diacritic combinations for ``a``. In the
+``mobile-intl`` layout, a long press on a punctuation key will show an overlay with all further punctuation options (the
+same for all punctuation keys). Moreover, a long press on the ``q`` key doubles as a trigger for the emoji overlay in
+this layout.
 
 Overlay functionality interferes with the ability to hold a key and have it outputted repeatedly.  You can disable
 overlay functionality with the ``-O`` flag or by setting the environment variable ``SVKBD_ENABLEOVERLAYS=0``. There is

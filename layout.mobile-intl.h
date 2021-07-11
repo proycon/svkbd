@@ -17,7 +17,7 @@ static Key keys_en[KEYS] = {
 	{ 0 }, /* New row */
 
 	{ "↹", 0, XK_Tab, 0.75 },
-	{ 0, 0, XK_q, 1 },
+	{ 0, "🙂", XK_q, 1 },
 	{ 0, 0, XK_w, 1 },
 	{ 0, 0, XK_e, 1 },
 	{ 0, 0, XK_r, 1 },
@@ -68,7 +68,7 @@ static Key keys_en[KEYS] = {
 };
 
 static Key keys_minimal[KEYS] = {
-	{ 0, 0, XK_q, 1 },
+	{ 0, "🙂", XK_q, 1 },
 	{ 0, 0, XK_w, 1 },
 	{ 0, 0, XK_e, 1 },
 	{ 0, 0, XK_r, 1 },
@@ -113,7 +113,7 @@ static Key keys_minimal[KEYS] = {
 	{ "↲ Enter", 0, XK_Return, 2 },
 };
 
-#define OVERLAYS 197
+#define OVERLAYS 226
 static Key overlay[OVERLAYS] = {
 	{ 0, 0, XK_a }, //Overlay for a
 	{ "à", 0, XK_agrave },
@@ -255,6 +255,35 @@ static Key overlay[OVERLAYS] = {
 	{ "ђ", 0, XK_Serbian_dje },
 	{ 0, 0, XK_Cancel }, /* XK_Cancel signifies  overlay boundary */
 	{ "🙂", 0, 0x101f642 }, //New overlay -> emoji overlay
+	{ "😀", 0, 0x101f600 },
+	{ "😁", 0, 0x101f601 },
+	{ "😂", 0, 0x101f602 },
+	{ "😃", 0, 0x101f603 },
+	{ "😄", 0, 0x101f604 },
+	{ "😅", 0, 0x101f605 },
+	{ "😆", 0, 0x101f606 },
+	{ "😇", 0, 0x101f607 },
+	{ "😈", 0, 0x101f608 },
+	{ "😉", 0, 0x101f609 },
+	{ "😊", 0, 0x101f60a },
+	{ "😋", 0, 0x101f60b },
+	{ "😌", 0, 0x101f60c },
+	{ "😍", 0, 0x101f60d },
+	{ "😎", 0, 0x101f60e },
+	{ "😏", 0, 0x101f60f },
+	{ "😐", 0, 0x101f610 },
+	{ "😒", 0, 0x101f612 },
+	{ "😓", 0, 0x101f613 },
+	{ "😛", 0, 0x101f61b },
+	{ "😮", 0, 0x101f62e },
+	{ "😟", 0, 0x101f61f },
+	{ "😟", 0, 0x101f620 },
+	{ "😢", 0, 0x101f622 },
+	{ "😭", 0, 0x101f62d },
+	{ "😳", 0, 0x101f633 },
+	{ "😴", 0, 0x101f634 },
+	{ 0, 0, XK_Cancel }, /* XK_Cancel signifies  overlay boundary */
+	{ "q", 0, XK_q }, //New overlay -> emoji overlay on Q key (for minimal layer)
 	{ "😀", 0, 0x101f600 },
 	{ "😁", 0, 0x101f601 },
 	{ "😂", 0, 0x101f602 },
