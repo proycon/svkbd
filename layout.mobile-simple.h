@@ -159,7 +159,8 @@ static Key keys_dialer[DIALER_KEYS] = {
 	{ "1!", 0, XK_1, 1 },
 	{ "2@", 0, XK_2, 1 },
 	{ "3#", 0, XK_3, 1 },
-	{ "⌫", 0, XK_BackSpace, 2 },
+	{ "-_", 0, XK_minus, 1 },
+	{ ",<", 0, XK_comma, 1 },
 
 	{ 0 },
 
@@ -167,8 +168,8 @@ static Key keys_dialer[DIALER_KEYS] = {
 	{ "4$", 0, XK_4, 1 },
 	{ "5%", 0, XK_5, 1 },
 	{ "6^", 0, XK_6, 1 },
-	{ "-_", 0, XK_minus, 1 },
-	{ ",<", 0, XK_comma, 1 },
+	{ "=+", 0, XK_equal, 1 },
+	{ "/?", 0, XK_slash, 1 },
 
 	{ 0 },
 
@@ -176,8 +177,7 @@ static Key keys_dialer[DIALER_KEYS] = {
 	{ "7&", 0, XK_7, 1 },
 	{ "8*", 0, XK_8, 1 },
 	{ "9(", 0, XK_9, 1 },
-	{ "=+", 0, XK_equal, 1 },
-	{ "/?", 0, XK_slash, 1 },
+	{ "⌫", 0, XK_BackSpace, 2 },
 
 	{ 0 },
 
@@ -188,7 +188,7 @@ static Key keys_dialer[DIALER_KEYS] = {
 	{ "↲ Enter", 0, XK_Return, 2},
 };
 
-#define OVERLAYS 192
+#define OVERLAYS 198
 
 static Key overlay[OVERLAYS] = {
 	{ 0, 0, XK_a },

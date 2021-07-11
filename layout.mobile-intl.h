@@ -113,7 +113,7 @@ static Key keys_minimal[KEYS] = {
 	{ "↲ Enter", 0, XK_Return, 2 },
 };
 
-#define OVERLAYS 197
+#define OVERLAYS 198
 static Key overlay[OVERLAYS] = {
 	{ 0, 0, XK_a }, //Overlay for a
 	//---
@@ -570,23 +570,23 @@ static Key keys_dialer[KEYS] = {
 	{ "1", "!" , XK_1, 1 },
 	{ "2", "@", XK_2, 1 },
 	{ "3", "#", XK_3, 1 },
-	{ "⌫Bksp", 0, XK_BackSpace, 2 },
+	{ "-", "_", XK_minus, 1 },
+	{ ",", "<", XK_comma, 1 },
 	{ 0 }, /* New row */
 
 	{ "Shift", 0, XK_Shift_L, 1 },
 	{ "4", "$", XK_4, 1 },
 	{ "5", "%", XK_5, 1 },
 	{ "6", "^", XK_6, 1 },
-	{ "-", "_", XK_minus, 1 },
-	{ ",", "<", XK_comma, 1 },
+	{ "=", "+", XK_equal, 1 },
+	{ "/", "?", XK_slash, 1 },
 	{ 0 }, /* New row */
 
 	{ "abc", 0, XK_Mode_switch, 1 },
 	{ "7", "&", XK_7, 1 },
 	{ "8", "*", XK_8, 1 },
 	{ "9", "(", XK_9, 1 },
-	{ "=", "+", XK_equal, 1 },
-	{ "/", "?", XK_slash, 1 },
+	{ "⌫Bksp", 0, XK_BackSpace, 2 },
 	{ 0 }, /* New row */
 
 	{ "↺", 0, XK_Cancel, 1},
