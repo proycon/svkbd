@@ -1062,6 +1062,8 @@ showoverlay(int idx)
 			j++;
 		if (overlay[i].width > 1)
 			j += overlay[i].width - 1;
+		if (j >= numkeys)
+			break;
 		keys[j].label = overlay[i].label;
 		keys[j].label2 = overlay[i].label2;
 		keys[j].keysym = overlay[i].keysym;
