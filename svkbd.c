@@ -1052,7 +1052,13 @@ showoverlay(int idx)
 		if (overlay[i].keysym == XK_Cancel) {
 			break;
 		}
-		while (keys[j].keysym == 0)
+		//certain modifier keys and basic keys are excluded from being overlayed:
+		while (keys[j].keysym == 0 || keys[j].keysym == XK_Shift_L ||
+				keys[j].keysym == XK_Shift_R || keys[j].keysym == XK_Control_L ||
+				keys[j].keysym == XK_Control_R || keys[j].keysym == XK_Alt_L ||
+				keys[j].keysym == XK_Alt_R || keys[j].keysym == XK_BackSpace ||
+				keys[j].keysym == XK_Return || keys[j].keysym == XK_space ||
+				keys[j].keysym == XK_Cancel)
 			j++;
 		if (overlay[i].width > 1)
 			j += overlay[i].width - 1;
