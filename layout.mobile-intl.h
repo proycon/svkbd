@@ -17,7 +17,7 @@ static Key keys_en[KEYS] = {
 	{ 0 }, /* New row */
 
 	{ "↹", 0, XK_Tab, 0.75 },
-	{ 0, "🙂", XK_q, 1 },
+	{ 0, "☺", XK_q, 1 },
 	{ 0, 0, XK_w, 1 },
 	{ 0, 0, XK_e, 1 },
 	{ 0, 0, XK_r, 1 },
@@ -68,7 +68,7 @@ static Key keys_en[KEYS] = {
 };
 
 static Key keys_minimal[KEYS] = {
-	{ 0, "🙂", XK_q, 1 },
+	{ 0, "☺", XK_q, 1 },
 	{ 0, 0, XK_w, 1 },
 	{ 0, 0, XK_e, 1 },
 	{ 0, 0, XK_r, 1 },
