@@ -9,7 +9,7 @@ include config.mk
 
 BIN = ${NAME}-${LAYOUT}
 SRC = drw.c ${NAME}.c util.c
-OBJ = ${SRC:.c=.o}
+OBJ = drw.o ${NAME}-${LAYOUT}.o util.o
 MAN1 = ${NAME}.1
 
 all: ${BIN}
@@ -24,7 +24,8 @@ options:
 config.h:
 	cp config.def.h $@
 
-svkbd.o: config.h layout.${LAYOUT}.h
+svkbd-${LAYOUT}.o: config.h layout.${LAYOUT}.h
+	${CC} ${SVKBD_CFLAGS} ${SVKBD_CPPFLAGS} -c svkbd.c -o $@
 
 .c.o:
 	${CC} ${SVKBD_CFLAGS} ${SVKBD_CPPFLAGS} -c $<
@@ -35,7 +36,7 @@ ${BIN}: ${OBJ}
 	${CC} -o ${BIN} ${OBJ} ${SVKBD_LDFLAGS}
 
 clean:
-	rm -f ${NAME}-?? ${NAME}-??.o ${OBJ} ${BIN}
+	rm -f ${NAME}-?? ${NAME}-*.o ${OBJ} ${BIN}
 
 dist:
 	rm -rf "${NAME}-${VERSION}"
