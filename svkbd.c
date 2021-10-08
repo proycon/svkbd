@@ -752,10 +752,10 @@ readxresources(void)
 		if (XrmGetResource(xdb, "svkbd.ABCbackground", "*", &type, &xval) && !colors[SchemeNormABC][ColBg])
 			colors[SchemeNormABC][ColBg] = estrdup(xval.addr);
 
-		if (XrmGetResource(xdb, "svkbd.ABCshiftforeground", "*", &type, &xval) && !colors[SchemeNormShift][ColFg])
-			colors[SchemeNormShift][ColFg] = estrdup(xval.addr);
-		if (XrmGetResource(xdb, "svkbd.ABCshiftbackground", "*", &type, &xval) && !colors[SchemeNormShift][ColBg])
-			colors[SchemeNormShift][ColBg] = estrdup(xval.addr);
+		if (XrmGetResource(xdb, "svkbd.ABCshiftforeground", "*", &type, &xval) && !colors[SchemeNormABCShift][ColFg])
+			colors[SchemeNormABCShift][ColFg] = estrdup(xval.addr);
+		if (XrmGetResource(xdb, "svkbd.ABCshiftbackground", "*", &type, &xval) && !colors[SchemeNormABCShift][ColBg])
+			colors[SchemeNormABCShift][ColBg] = estrdup(xval.addr);
 
 		if (XrmGetResource(xdb, "svkbd.pressbackground", "*", &type, &xval) && !colors[SchemePress][ColBg])
 			colors[SchemePress][ColBg] = estrdup(xval.addr);
