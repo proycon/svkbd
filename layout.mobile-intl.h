@@ -67,6 +67,73 @@ static Key keys_en[KEYS] = {
 	{ "↲ Enter", 0, XK_Return, 2 },
 };
 
+static Key keys_dvorak[KEYS] = {
+	{ "Esc", "", XK_Escape, 1 },
+	{ "1", "!", XK_1, 1 },
+	{ "2", "@", XK_2, 1 },
+	{ "3", "#", XK_3, 1 },
+	{ "4", "$", XK_4, 1 },
+	{ "5", "%", XK_5, 1 },
+	{ "6", "^", XK_6, 1 },
+	{ "7", "&", XK_7, 1 },
+	{ "8", "*", XK_8, 1 },
+	{ "9", "(", XK_9, 1 },
+	{ "0", ")", XK_0, 1 },
+
+	{ 0 }, /* New row */
+
+	{ "↹", 0, XK_Tab, 0.75 },
+	{ ";", ":", XK_colon, 1 },
+	{ ",", "<", XK_comma, 1 },
+	{ ".", ">", XK_period, 1 },
+	{ 0, 0, XK_p, 1 },
+	{ 0, 0, XK_y, 1 },
+	{ 0, 0, XK_f, 1 },
+	{ 0, 0, XK_g, 1 },
+	{ 0, 0, XK_c, 1 },
+	{ 0, 0, XK_r, 1 },
+	{ 0, 0, XK_l, 1 },
+	{ "/", "?", XK_slash, .75 },
+
+	{ 0 }, /* New row */
+
+	{ "^", 0, XK_Control_L, 1 },
+	{ 0, 0, XK_a, 1 },
+	{ 0, 0, XK_o, 1 },
+	{ 0, 0, XK_e, 1 },
+	{ 0, 0, XK_u, 1 },
+	{ 0, 0, XK_i, 1 },
+	{ 0, 0, XK_d, 1 },
+	{ 0, 0, XK_h, 1 },
+	{ 0, 0, XK_t, 1 },
+	{ 0, 0, XK_n, 1 },
+	{ 0, 0, XK_s, 1 },
+	{ "-", "_", XK_minus, 1 },
+
+	{ 0 }, /* New row */
+
+	{ "⇧", 0, XK_Shift_L, 1.5 },
+	{ "'", "\"", XK_apostrophe, 1 },
+	{ 0, 0, XK_q, 1 },
+	{ 0, 0, XK_j, 1 },
+	{ 0, 0, XK_k, 1 },
+	{ 0, 0, XK_x, 1 },
+	{ 0, 0, XK_b, 1 },
+	{ 0, 0, XK_m, 1 },
+	{ 0, 0, XK_w, 1 },
+	{ 0, 0, XK_v, 1 },
+	{ 0, 0, XK_z, 1 },
+	{ "⌫", 0, XK_BackSpace, 1 },
+
+	{ 0 }, /* New row */
+	{ "↺", 0, XK_Cancel, 1},
+	{ "Alt", 0, XK_Alt_L, 1 },
+	{ "", 0, XK_space, 4 },
+	{ "↓", 0, XK_Down, 1 },
+	{ "↑", 0, XK_Up, 1 },
+	{ "↲ Enter", 0, XK_Return, 2 },
+};
+
 static Key keys_minimal[KEYS] = {
 	{ 0, "☺", XK_q, 1 },
 	{ 0, 0, XK_w, 1 },
@@ -634,13 +701,14 @@ static Key keys_dialer[KEYS] = {
 	{ 0 }, /* Last item (double 0) */
 };
 
-#define LAYERS 7
+#define LAYERS 8
 static char* layer_names[LAYERS] = {
 	"en",
 	"symbols",
 	"navigation",
 	"dialer",
 	"minimal",
+	"dvorak",
 	"am",
 	"ru"
 };
@@ -651,6 +719,7 @@ static Key* available_layers[LAYERS] = {
 	keys_navigation,
 	keys_dialer,
 	keys_minimal,
+	keys_dvorak,
 	keys_am,
 	keys_ru,
 };
