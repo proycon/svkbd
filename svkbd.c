@@ -453,7 +453,7 @@ press(Key *k, KeySym buttonmod)
 		if (enableoverlays && currentoverlay == -1)
 			overlayidx = hasoverlay(k->keysym);
 		if ((pressonrelease) || (enableoverlays && overlayidx != -1)) {
-			/*record the begin of the press, don't simulate the actual keypress yet */
+			/* record the begin of the press, don't simulate the actual keypress yet */
 			record_press_begin(k->keysym);
 		} else {
 			printdbg("Simulating press: %ld (mod %ld)\n", k->keysym, buttonmod);
