@@ -481,9 +481,18 @@ press(Key *k, KeySym buttonmod)
 int
 tmp_remap(KeySym keysym)
 {
-	XChangeKeyboardMapping(dpy, tmp_keycode, 1, &keysym, 1);
+	/* map lower and upper case of keysym to the temporary keycode */
+	KeySym syms[2];
+	XConvertCase(keysym, &syms[0], &syms[1]);
+
+	/* if keysym is capital letter then swap upper and lower case */
+	if (keysym == syms[1])
+		syms[1] = syms[0], syms[0] = keysym;
+
+	XChangeKeyboardMapping(dpy, tmp_keycode, syms[0] == syms[1] ? 1 : 2, syms, 1);
 	XSync(dpy, False);
 
+	printdbg("Temporary map keysym %ld (%ld, %ld) to keycode %d\n", keysym, syms[0], syms[1], tmp_keycode);
 	return tmp_keycode;
 }
 
